@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="surface" x1="8" y1="5" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1f4b46"/>
+      <stop offset="1" stop-color="#102b28"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="14" y1="47" x2="51" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f7f2e7"/>
+      <stop offset=".68" stop-color="#f7f2e7"/>
+      <stop offset="1" stop-color="#e46f4c"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#surface)"/>
+  <path d="M16 17v30M32 17v30M48 17v30M16 17h32M16 32h32M16 47h32" fill="none" stroke="#b8ccc7" stroke-width="1.25" opacity=".16"/>
+  <circle cx="16" cy="17" r="2.5" fill="#a8c0bb" opacity=".45"/>
+  <circle cx="32" cy="17" r="2.5" fill="#a8c0bb" opacity=".45"/>
+  <circle cx="48" cy="32" r="2.5" fill="#a8c0bb" opacity=".45"/>
+  <circle cx="16" cy="32" r="2.5" fill="#a8c0bb" opacity=".45"/>
+  <circle cx="32" cy="47" r="2.5" fill="#a8c0bb" opacity=".45"/>
+  <circle cx="48" cy="47" r="2.5" fill="#a8c0bb" opacity=".45"/>
+  <path d="M15 47c8.5 0 8.5-14.5 17-15s7.5-15 17-15" fill="none" stroke="url(#signal)" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="15" cy="47" r="3.5" fill="#f7f2e7"/>
+  <circle cx="32" cy="32" r="3.5" fill="#f7f2e7"/>
+  <circle cx="49" cy="17" r="5" fill="#e46f4c"/>
+</svg>

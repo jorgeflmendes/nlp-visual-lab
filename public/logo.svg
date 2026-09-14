@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 202 48">
+  <defs>
+    <linearGradient id="surface" x1="6" y1="4" x2="44" y2="45" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1f4b46"/>
+      <stop offset="1" stop-color="#102b28"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="10.5" y1="35.25" x2="38.25" y2="12" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f7f2e7"/>
+      <stop offset=".68" stop-color="#f7f2e7"/>
+      <stop offset="1" stop-color="#e46f4c"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="12" fill="url(#surface)"/>
+  <path d="M12 12.75v22.5M24 12.75v22.5M36 12.75v22.5M12 12.75h24M12 24h24M12 35.25h24" fill="none" stroke="#b8ccc7" stroke-width=".95" opacity=".16"/>
+  <g fill="#a8c0bb" opacity=".45">
+    <circle cx="12" cy="12.75" r="1.9"/>
+    <circle cx="24" cy="12.75" r="1.9"/>
+    <circle cx="36" cy="24" r="1.9"/>
+    <circle cx="12" cy="24" r="1.9"/>
+    <circle cx="24" cy="35.25" r="1.9"/>
+    <circle cx="36" cy="35.25" r="1.9"/>
+  </g>
+  <path d="M11.25 35.25c6.4 0 6.4-10.9 12.75-11.25s5.6-11.25 12.75-11.25" fill="none" stroke="url(#signal)" stroke-width="3.4" stroke-linecap="round"/>
+  <circle cx="11.25" cy="35.25" r="2.65" fill="#f7f2e7"/>
+  <circle cx="24" cy="24" r="2.65" fill="#f7f2e7"/>
+  <circle cx="36.75" cy="12.75" r="3.75" fill="#e46f4c"/>
+  <text x="64" y="30" fill="#172623" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="18" font-weight="750" letter-spacing="-.55">NLP</text>
+  <text x="101" y="30" fill="#315752" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15" font-weight="650" letter-spacing=".15">VISUAL LAB</text>
+</svg>
