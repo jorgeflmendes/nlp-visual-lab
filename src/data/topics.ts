@@ -25,6 +25,11 @@ export const topics: Topic[] = [
     title: "CKY parsing",
     summary: "Fill a pyramidal chart from a grammar in Chomsky normal form.",
   },
+  {
+    slug: "tfidf",
+    title: "TF-IDF Vector Space",
+    summary: "Build term-document representations from first principles, evaluate cosine similarities and query retrieval.",
+  },
 ];
 
 export interface DeepLearningTopic extends Topic {

@@ -1,0 +1,335 @@
+/* TF-IDF Laboratory styles integrated with NLP Visual Lab design system */
+
+.tfidf-workspace {
+  --tfidf-series: var(--green);
+  --tfidf-highlight: var(--green-soft);
+  min-width: 0;
+}
+
+.tfidf-workspace textarea,
+.tfidf-workspace input[type="text"],
+.tfidf-workspace input[type="number"],
+.tfidf-workspace select {
+  border: 1px solid #c4cfc7;
+  border-radius: 5px;
+  background: #fcfdfa;
+  padding: 8px 10px;
+  color: var(--ink);
+  font: 0.82rem/1.5 inherit;
+  box-sizing: border-box;
+}
+
+.tfidf-workspace textarea {
+  font-family: Consolas, "SFMono-Regular", monospace;
+  resize: vertical;
+}
+
+.tfidf-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.tfidf-checks {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tfidf-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.tfidf-empty {
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--dl-muted);
+  font-size: 0.85rem;
+}
+
+.tfidf-idx {
+  font-family: Consolas, monospace;
+  font-size: 0.72rem;
+  color: var(--dl-muted);
+  font-weight: 600;
+}
+
+/* Status bar across bottom of experiment panel */
+#tfidf-status-msg {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  min-height: 42px;
+  padding: 11px 24px;
+  border-top: 1px solid var(--line);
+  color: var(--dl-muted);
+  background: #f9faf7;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Document cards grid */
+.tfidf-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.tfidf-doc-card {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fcfdfa;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tfidf-doc-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tfidf-doc-card-head input {
+  width: 120px;
+  font-family: Consolas, monospace;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 5px 8px;
+}
+
+.tfidf-doc-card-head button {
+  border-color: transparent;
+  background: transparent;
+  color: var(--dl-muted);
+  font-size: 0.74rem;
+  padding: 4px 8px;
+  min-height: auto;
+}
+
+.tfidf-doc-card-head button:hover:not(:disabled) {
+  color: #b00020;
+  background: #faeceb;
+  border-color: #f1b3af;
+}
+
+.tfidf-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* Config details accordion */
+.tfidf-config-details {
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fcfdfa;
+  padding: 10px 14px;
+}
+
+.tfidf-config-details summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--green);
+}
+
+.tfidf-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* Stats container */
+.tfidf-stats-container {
+  padding: 4px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.tfidf-stats-container .dl-statistics {
+  margin: 0;
+  border-block: none;
+  padding: 10px 0;
+}
+
+/* Term-document matrix */
+.tfidf-matrix-card {
+  padding: 20px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.tfidf-matrix-wrap {
+  overflow: auto;
+  max-height: 440px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  margin-top: 12px;
+}
+
+.tfidf-matrix-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  font-size: 0.75rem;
+}
+
+.tfidf-matrix-table th,
+.tfidf-matrix-table td {
+  padding: 8px 12px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tfidf-matrix-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f3f6f3;
+  color: var(--dl-muted);
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.tfidf-matrix-table th:first-child {
+  left: 0;
+  z-index: 3;
+  min-width: 120px;
+  text-align: left;
+}
+
+.tfidf-matrix-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #fcfdfa;
+  text-align: left;
+  font-family: Consolas, monospace;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tfidf-cell {
+  cursor: pointer;
+  font-family: Consolas, monospace;
+  transition: background 0.15s ease;
+}
+
+.tfidf-cell:hover {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+
+.tfidf-cell.selected {
+  outline: 2px solid var(--green) !important;
+  outline-offset: -2px;
+  background: var(--green-soft) !important;
+  font-weight: 700;
+}
+
+.tfidf-heat1 { background: rgba(45, 80, 61, 0.08); }
+.tfidf-heat2 { background: rgba(45, 80, 61, 0.20); }
+.tfidf-heat3 { background: rgba(45, 80, 61, 0.40); }
+.tfidf-heat4 { background: rgba(45, 80, 61, 0.75); color: #fcfdfa; font-weight: 700; }
+
+/* Inspector grid */
+.tfidf-inspector-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.95fr);
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.tfidf-border-left {
+  border-left: 1px solid var(--line);
+}
+
+.tfidf-card-clean {
+  padding: 20px 24px;
+  min-width: 0;
+}
+
+.tfidf-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tfidf-card-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+/* Vector similarity & Retrieval grid */
+.tfidf-tools-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Ranking list & bar */
+.tfidf-rank-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 60px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tfidf-rank-item:last-child {
+  border-bottom: none;
+}
+
+.tfidf-rank-bar {
+  height: 5px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: #d8ded8;
+  overflow: hidden;
+}
+
+.tfidf-rank-fill {
+  height: 100%;
+  background: var(--green);
+}
+
+@media (max-width: 960px) {
+  .tfidf-inspector-grid,
+  .tfidf-tools-grid {
+    grid-template-columns: 1fr;
+  }
+  .tfidf-border-left {
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+}

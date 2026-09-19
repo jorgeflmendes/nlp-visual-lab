@@ -7,7 +7,7 @@ const appRoot = document.querySelector<HTMLDivElement>("#app");
 if (!appRoot) throw new Error("App root not found");
 const app = appRoot;
 
-async function typesetMath(root: ParentNode = document): Promise<void> {
+export async function typesetMath(root: ParentNode = document): Promise<void> {
   const elements = root.querySelectorAll<HTMLElement>("[data-latex]");
   if (elements.length === 0) return;
   const [{ default: katex }] = await Promise.all([
@@ -57,8 +57,8 @@ function home(): string {
     </header>
     <section class="topic-list" aria-label="Categories">
       <a href="#/solvers">
-        <small>01 / Four solvers</small>
-        <div><h2>Solvers</h2><p>Work through edit distance, bigram probabilities, Viterbi HMM and CKY parsing. Follow the tables, formulas and decisions.</p></div>
+        <small>01 / Five solvers</small>
+        <div><h2>Solvers</h2><p>Work through edit distance, bigram probabilities, Viterbi HMM, CKY parsing and TF-IDF. Follow the tables, formulas and decisions.</p></div>
         <span aria-hidden="true">→</span>
       </a>
       <a class="topic-category" href="#/deep-learning">
@@ -71,7 +71,13 @@ function home(): string {
 }
 
 function solversCategory(): string {
-  const stages = [["Matrix", "Minimum paths"], ["Counts", "Sentence factors"], ["SS & BP tables", "Best sequence"], ["Grammar", "Chart", "Derivations"]];
+  const stages = [
+    ["Matrix", "Minimum paths"],
+    ["Counts", "Sentence factors"],
+    ["SS & BP tables", "Best sequence"],
+    ["Grammar", "Chart", "Derivations"],
+    ["Counts", "TF", "DF / IDF", "Vectors"],
+  ];
   return `<section class="dl-category"><header><p class="dl-eyebrow">Solvers / classical methods</p><h1>Work through the solution.</h1><p>Edit an example and follow its complete calculation. Inspect the tables, compare candidates and trace the result.</p></header><div class="dl-catalog" aria-label="Solvers">${topics.map((topic, index) => `<a href="#/${topic.slug}"><span class="dl-catalog-index">0${index + 1}</span><div class="dl-catalog-title"><h2>${topic.title}</h2><p>${topic.summary}</p></div><div class="dl-catalog-flow">${stages[index].map((stage) => `<span>${stage}</span>`).join('<b aria-hidden="true">→</b>')}</div><span class="dl-catalog-arrow" aria-hidden="true">↗</span></a>`).join("")}</div></section>`;
 }
 
@@ -113,7 +119,8 @@ async function render(): Promise<void> {
   const method = topic.slug === "edit-distance" ? await import("./editDistanceLab.ts").then((module) => ({ page: module.editDistancePage, bind: module.bindEditDistance }))
     : topic.slug === "n-grams" ? await import("./bigramLab.ts").then((module) => ({ page: module.ngramsPage, bind: module.bindNgrams }))
     : topic.slug === "viterbi" ? await import("./viterbiLab.ts").then((module) => ({ page: module.viterbiPage, bind: module.bindViterbi }))
-    : await import("./ckyLab.ts").then((module) => ({ page: module.ckyPage, bind: module.bindCky }));
+    : topic.slug === "cky" ? await import("./ckyLab.ts").then((module) => ({ page: module.ckyPage, bind: module.bindCky }))
+    : await import("./tfidfLab.ts").then((module) => ({ page: module.tfidfPage, bind: module.bindTfidf }));
   if (route() !== current) return;
   layout(topic.slug, method.page(topic));
   method.bind();

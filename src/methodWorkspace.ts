@@ -29,7 +29,7 @@ export function methodPage(topic: Topic, options: {
   title: string; description: string; inputs: string; notes: string;
   examples?: Array<{ label: string; values: Record<string, string> }>;
 }): string {
-  const links = [["edit-distance", "Edit distance"], ["n-grams", "Bigrams"], ["viterbi", "Viterbi"], ["cky", "CKY"]];
+  const links = [["edit-distance", "Edit distance"], ["n-grams", "Bigrams"], ["viterbi", "Viterbi"], ["cky", "CKY"], ["tfidf", "TF-IDF"]];
   return `<article id="method-workspace" class="ml-workspace dl-workspace">
     <nav class="dl-model-nav" aria-label="Solvers"><a class="dl-back" href="#/solvers" aria-label="All solvers">← <span>Solvers</span></a><div>${links.map(([slug, label]) => `<a href="#/${slug}" ${topic.slug === slug ? 'aria-current="page"' : ""}>${label}</a>`).join("")}</div></nav>
     <header class="dl-page-heading"><div><p class="dl-eyebrow">Solvers / interactive lab</p><h1>${escapeHtml(options.title)}</h1><p>${escapeHtml(options.description)}</p></div><span class="dl-state" id="method-state">Ready to calculate</span></header>
