@@ -60,8 +60,8 @@ export function bpePage(topic: DeepLearningTopic): string {
         <textarea id="bpe-corpus" rows="4" spellcheck="false">low lower lowest new newer newest wide wider widest</textarea>
         <div class="dl-presets" aria-label="Example corpora">
           <span>Try</span>
-          <button id="bpe-example" type="button">Example corpus</button>
-          <button id="bpe-slide" type="button">Slide example</button>
+          <button id="bpe-example" type="button">Vocabulary expansion</button>
+          <button id="bpe-morphology" type="button">Morphology &amp; affixes</button>
           <button id="bpe-clear" type="button">Clear</button>
           <label style="cursor:pointer; color:var(--green); font-size:.74rem; text-decoration:underline; text-decoration-color:#a9c4b9; text-underline-offset:4px; padding-inline:8px;">
             Load file
@@ -161,7 +161,7 @@ export function bpePage(topic: DeepLearningTopic): string {
   </article>`;
 }
 
-function renderInspectorTemplate(): string {
+function renderInspectorTemplate(inferText: string = "lowest newer"): string {
   return `
     <section class="dl-execution" aria-label="BPE execution walkthrough">
       <!-- Transport control bar directly matching deep learning standards -->
@@ -269,7 +269,7 @@ function renderInspectorTemplate(): string {
           <div class="bpe-playground-form">
             <div>
               <label for="bpe-infer" class="bpe-label">Text to tokenize</label>
-              <textarea id="bpe-infer" rows="2" spellcheck="false">lowest newer</textarea>
+              <textarea id="bpe-infer" rows="2" spellcheck="false">${escapeHtml(inferText)}</textarea>
             </div>
             <div>
               <label for="bpe-inferMode" class="bpe-label">Rules to apply</label>
@@ -309,6 +309,7 @@ export function bindBpe(): void {
   const emptyResult = resultContainer?.innerHTML ?? "";
   const emptyOutput = outputEl?.innerHTML ?? "";
 
+  let currentInferText = "lowest newer";
   let model: BpeModel | null = null;
   let step = 0;
   let playing = false;
@@ -702,7 +703,10 @@ export function bindBpe(): void {
       }
     });
 
-    $("bpe-infer")?.addEventListener("input", renderInference);
+    $("bpe-infer")?.addEventListener("input", (e: Event) => {
+      currentInferText = (e.target as HTMLTextAreaElement).value;
+      renderInference();
+    });
     $("bpe-inferMode")?.addEventListener("change", renderInference);
 
     // Stages navigation buttons (1: Characters, 2: Count pairs, 3: Merge winner, 4: Tokenizer)
@@ -787,7 +791,7 @@ export function bindBpe(): void {
 
       // Mount the execution inspector template
       if (resultContainer) {
-        resultContainer.innerHTML = renderInspectorTemplate();
+        resultContainer.innerHTML = renderInspectorTemplate(currentInferText);
       }
 
       bindInspectorEvents();
@@ -808,6 +812,7 @@ export function bindBpe(): void {
 
   $("bpe-reset-btn")?.addEventListener("click", () => {
     if (corpusInput) corpusInput.value = initialCorpus;
+    currentInferText = "lowest newer";
     const splitSelect = $("bpe-split") as HTMLSelectElement;
     const customInput = $("bpe-custom") as HTMLInputElement;
     const tieSelect = $("bpe-tie") as HTMLSelectElement;
@@ -854,27 +859,35 @@ export function bindBpe(): void {
 
   $("bpe-example")?.addEventListener("click", () => {
     if (corpusInput) corpusInput.value = "low lower lowest new newer newest wide wider widest low low lower newer wide";
+    currentInferText = "lowest newer";
+    const inferEl = $("bpe-infer") as HTMLTextAreaElement;
     const splitEl = $("bpe-split") as HTMLSelectElement;
     const customEl = $("bpe-custom") as HTMLInputElement;
     const fnEl = $("bpe-filename");
+    if (inferEl) inferEl.value = currentInferText;
     if (splitEl) splitEl.value = "whitespace";
     if (customEl) customEl.disabled = true;
     if (fnEl) fnEl.textContent = "";
     invalidate();
   });
 
-  $("bpe-slide")?.addEventListener("click", () => {
-    if (corpusInput) corpusInput.value = "abc, abc, abc, abd";
+  $("bpe-morphology")?.addEventListener("click", () => {
+    if (corpusInput) corpusInput.value = "play playing player plays replay walk walking walker walks rework teach teacher teaches reteach";
+    currentInferText = "replaying walker reteaches";
+    const inferEl = $("bpe-infer") as HTMLTextAreaElement;
     const splitEl = $("bpe-split") as HTMLSelectElement;
     const targetEl = $("bpe-target") as HTMLInputElement;
     const maxEl = $("bpe-max") as HTMLInputElement;
     const minEl = $("bpe-min") as HTMLInputElement;
+    const customEl = $("bpe-custom") as HTMLInputElement;
     const fnEl = $("bpe-filename");
 
-    if (splitEl) splitEl.value = "comma";
-    if (targetEl) targetEl.value = "6";
-    if (maxEl) maxEl.value = "10";
-    if (minEl) minEl.value = "1";
+    if (inferEl) inferEl.value = currentInferText;
+    if (splitEl) splitEl.value = "whitespace";
+    if (customEl) customEl.disabled = true;
+    if (targetEl) targetEl.value = "35";
+    if (maxEl) maxEl.value = "25";
+    if (minEl) minEl.value = "2";
     if (fnEl) fnEl.textContent = "";
     invalidate();
   });

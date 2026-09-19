@@ -26,7 +26,7 @@ const copy: Record<DeepLearningTopic["kind"], PageCopy> = {
     description: "Follow how Byte Pair Encoding iteratively aggregates the most frequent adjacent character and subword pairs into a learned vocabulary.",
     inputLabel: "Training corpus", inputValue: "low lower lowest new newer newest wide wider widest",
     inputHint: "Define sequences, vocabulary limits and stopping criteria.",
-    presets: [["Vocabulary expansion", "low lower lowest new newer newest wide wider widest"], ["Small alphabet", "abc, abc, abc, abd"]],
+    presets: [["Vocabulary expansion", "low lower lowest new newer newest wide wider widest"], ["Morphology & affixes", "play playing player plays replay walk walking walker walks rework teach teacher teaches reteach"]],
     model: "Byte Pair Encoding", source: "Subword Tokenization", sourceUrl: "https://en.wikipedia.org/wiki/Byte_pair_encoding",
     inspect: "Pair leaderboard, merge decisions, evolving vocabulary and inference trace.", stages: ["Corpus", "Pairs", "Merges", "Tokenizer"],
   },
