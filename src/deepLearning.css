@@ -99,9 +99,30 @@
 .dl-eyebrow {
   margin: 0 0 8px;
   color: var(--accent);
-  font: 600 0.72rem/1.5 Consolas, "SFMono-Regular", monospace;
-  letter-spacing: 0.07em;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  font-family: inherit;
+}
+
+.dl-section-label > :last-child {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: inherit;
+}
+
+.dl-step-heading small {
+  flex-basis: 100%;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: inherit;
 }
 
 .dl-page-heading h1 {
@@ -405,6 +426,23 @@
   line-height: 1.6;
 }
 
+.dl-execution > .dl-note {
+  margin: 0;
+  padding: 12px 24px;
+  background: var(--status-bar-bg);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.dl-catalog-note {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
 .dl-error {
   border-left: 3px solid var(--red);
   padding: 16px 20px;
@@ -563,10 +601,10 @@
 .dl-step-heading small {
   flex-basis: 100%;
   color: var(--accent);
-  font: 0.7rem Consolas, "SFMono-Regular", monospace;
+  font-size: 0.72rem;
+  font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 600;
 }
 
 .dl-step-heading h2 {
@@ -737,30 +775,60 @@
 .dl-axis-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin: 12px 0 15px;
+  align-items: flex-end;
+  gap: 14px;
+  margin: 14px 0 18px;
 }
 
 .dl-axis-controls label {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: 0.74rem;
+  font-weight: 500;
 }
 
 .dl-axis-controls select {
-  max-width: 210px;
-  padding: 8px 28px 8px 10px;
-  font-size: 0.78rem;
+  min-width: 140px;
+  max-width: 220px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
   font-family: inherit;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--ink);
+}
+
+.dl-axis-controls input {
+  width: 110px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--ink);
+  font: 0.82rem Consolas, "SFMono-Regular", monospace;
+  box-sizing: border-box;
+}
+
+.dl-axis-controls > span {
+  align-self: center;
+  padding-bottom: 2px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.dl-axis-controls > button {
+  align-self: flex-end;
 }
 
 .dl-statistics {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px 28px;
-  padding: 12px 0;
-  margin: 0 0 14px;
+  gap: 16px 32px;
+  padding: 14px 0;
+  margin: 0 0 16px;
   border-block: 1px solid var(--line);
 }
 
@@ -771,61 +839,513 @@
 
 .dl-statistics dt {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .dl-statistics dd {
   margin: 0;
-  font: 0.88rem/1.2 Consolas, "SFMono-Regular", monospace;
+  font: 0.92rem/1.2 Consolas, "SFMono-Regular", monospace;
   font-weight: 600;
   color: var(--ink);
 }
 
-.dl-values {
-  margin-top: 14px;
+/* Tensor Vector Grid */
+.dl-vector-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+  margin: 14px 0;
 }
 
-.dl-values table {
-  border-collapse: separate;
-  border-spacing: 3px;
-  font: 0.75rem Consolas, "SFMono-Regular", monospace;
-}
-
-.dl-values th {
-  padding: 4px 6px;
-  color: var(--muted);
-  font-weight: 500;
-  font-size: 0.68rem;
-}
-
-.dl-values td button {
-  width: 100%;
-  min-width: 52px;
-  min-height: 32px;
-  padding: 4px 6px;
-  border-radius: 4px;
+.dl-vector-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
   border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--cell-color, var(--soft));
+  color: var(--ink);
+  font: 0.76rem Consolas, "SFMono-Regular", monospace;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dl-vector-grid button > span {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(var(--panel), 0.85);
   background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.dl-vector-grid button:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.dl-vector-grid button.is-selected,
+.dl-vector-grid button[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+  font-weight: 700;
+}
+
+.dl-tensor-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 10px;
+}
+
+.dl-tensor-pagination > span {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* Raw Values Table */
+.dl-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.dl-raw {
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.dl-raw summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.dl-raw > div {
+  max-height: 280px;
+  overflow: auto;
+}
+
+.dl-raw table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 0.76rem Consolas, "SFMono-Regular", monospace;
+}
+
+.dl-raw :is(th, td) {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.dl-raw th {
+  background: var(--soft);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.dl-raw td {
   color: var(--ink);
 }
 
-.dl-values td button[aria-pressed="true"] {
+/* Candidates / Output Distribution Table */
+.dl-candidates {
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.dl-candidates h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.dl-candidates h3 small {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.dl-candidates table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dl-candidates thead th {
+  padding: 9px 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-align: left;
+  background: var(--soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.dl-candidates td,
+.dl-candidates tbody th {
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  vertical-align: middle;
+}
+
+.dl-candidates tbody th {
+  font-weight: 500;
+}
+
+.dl-candidates tbody th button {
+  min-height: 32px;
+  padding: 4px 10px;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 0.82rem;
+}
+
+.dl-candidates button[aria-pressed="true"] {
+  background: var(--accent-soft);
   border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.dl-probability-track {
+  display: inline-block;
+  vertical-align: middle;
+  width: clamp(60px, 15vw, 180px);
+  height: 8px;
+  margin-right: 10px;
+  border-radius: 4px;
+  background: var(--soft-hover);
+  overflow: hidden;
+}
+
+.dl-probability-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+/* Attention Matrix */
+.dl-attention {
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.dl-attention h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.dl-attention h3 small {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.dl-attention-scroll {
+  max-width: 100%;
+  max-height: 480px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.dl-attention-scroll table {
+  border-collapse: separate;
+  border-spacing: 4px;
+  padding: 8px;
+  font: 0.78rem Consolas, "SFMono-Regular", monospace;
+}
+
+.dl-attention-scroll th {
+  font-weight: 500;
+}
+
+.dl-attention-scroll th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--panel);
+}
+
+.dl-attention-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--panel);
+}
+
+.dl-attention-scroll td {
+  padding: 0;
+}
+
+.dl-attention-scroll button {
+  min-width: 44px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font: 0.74rem Consolas, "SFMono-Regular", monospace;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dl-attention-scroll th button {
+  border-color: var(--line);
+  background: var(--soft);
+  color: var(--ink);
+}
+
+.dl-attention-scroll th button small {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.dl-attention-scroll td button {
+  border: 1px solid var(--line);
+  font-weight: 500;
+}
+
+.dl-attention-scroll button[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+  font-weight: 700;
+}
+
+.dl-attention-scroll th button[aria-pressed="true"] {
   background: var(--accent-soft);
   color: var(--accent);
+  border-color: var(--accent);
+}
+
+.dl-attention-scroll tr.is-active td {
+  border-block: 2px solid var(--accent);
+}
+
+.dl-attention-scroll td.is-source {
+  outline: 2px solid var(--yellow);
+}
+
+/* Recurrence / LSTM Cell Memory Computation */
+.dl-recurrence {
+  margin: 18px 0 22px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  overflow-x: auto;
+}
+
+.dl-recurrence header {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  margin-bottom: 14px;
+  font-size: 0.84rem;
+}
+
+.dl-recurrence header strong {
+  color: var(--ink);
   font-weight: 650;
+}
+
+.dl-recurrence header span {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.dl-memory-lane,
+.dl-hidden-lane {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 680px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+
+.dl-memory-lane {
+  border-left: 3px solid var(--green);
+  background: var(--soft);
+}
+
+.dl-hidden-lane {
+  border-left: 3px solid var(--accent);
+  margin-top: 8px;
+  background: var(--soft);
+}
+
+.dl-lane-label {
+  flex: 0 0 84px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dl-recurrence button {
+  display: grid;
+  gap: 4px;
+  padding: 6px 10px;
+  text-align: left;
+  min-height: 40px;
+  border-radius: 5px;
+  background: var(--panel);
+}
+
+.dl-recurrence button small {
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.dl-recurrence button strong {
+  font: 0.8rem Consolas, "SFMono-Regular", monospace;
+  color: var(--ink);
+}
+
+.dl-recurrence button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
   box-shadow: 0 0 0 1px var(--accent);
 }
 
-.dl-value-detail {
-  margin-top: 14px;
-  padding: 12px 14px;
+.dl-recurrence b {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.dl-memory-delta {
+  margin-left: auto;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  color: var(--muted);
+  background: var(--panel);
   border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+/* Value & Attention Details */
+.dl-value-detail,
+.dl-attention-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: baseline;
+  margin: 14px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
   border-radius: 6px;
   background: var(--soft);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.dl-value-detail code,
+.dl-attention-detail code {
+  font-size: 0.8rem;
+  background: var(--panel);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+/* Model notes accordion */
+.dl-model-notes {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding: 16px 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.dl-model-notes summary {
+  cursor: pointer;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--ink);
+  transition: color 0.15s ease;
+}
+
+.dl-model-notes summary:hover {
+  color: var(--accent);
+}
+
+.dl-model-notes p {
+  max-width: 820px;
+  line-height: 1.65;
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.dl-empty-val {
+  display: inline-block;
+  color: var(--muted-light);
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-weight: normal;
+  padding: 0 2px;
+  user-select: none;
+}
+
+.dl-state[data-state="error"] {
+  color: var(--red-text);
+  border-color: var(--red);
+  background: var(--red-soft);
+}
+
+.dl-state[data-state="result available"],
+.dl-state[data-state="ready"] {
+  color: var(--green-text);
+  border-color: var(--green);
+  background: var(--green-soft);
 }
 
 /* Category Index Page */

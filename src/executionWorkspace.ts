@@ -21,7 +21,7 @@ function shape(tensor: TraceTensor): string {
 
 function cellColor(value: number, scale: number): string {
   const intensity = scale ? Math.min(1, Math.abs(value) / scale) : 0;
-  return `color-mix(in srgb, ${value < 0 ? "#bb533d" : "#1f625b"} ${intensity * 80}%, #f2f5f1)`;
+  return `color-mix(in srgb, ${value < 0 ? "#ef4444" : "#6366f1"} ${Math.round(intensity * 75)}%, var(--soft))`;
 }
 
 function coordinates(index: number, dimensions: number[]): number[] {
@@ -172,11 +172,15 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
   const tensorNow = () => stepNow().tensors[tensorIndex];
   const stop = () => { playing = false; clearTimeout(timer); playButton.textContent = "Play"; playButton.setAttribute("aria-pressed", "false"); };
   const restoreFocus = (selector: string | undefined) => { if (selector) root.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true }); };
+  const resetCandidateIndex = () => {
+    const winningCandidateIndex = stepNow().probabilities?.findIndex(candidate => candidate.selected) ?? -1;
+    candidateIndex = winningCandidateIndex >= 0 ? winningCandidateIndex : 0;
+  };
   const move = (index: number, focus?: string) => {
     selected = Math.max(0, Math.min(trace.steps.length - 1, index));
     const matching = stepNow().tensors.findIndex(tensor => tensor.name === tensorName);
     tensorIndex = Math.max(0, matching);
-    candidateIndex = 0;
+    resetCandidateIndex();
     if (selected === trace.steps.length - 1) stop();
     drawStep();
     restoreFocus(focus);
@@ -208,7 +212,7 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
   const candidates = (step: ExecutionStep) => {
     if (!step.probabilities?.length) return "";
     const hasLogits = step.probabilities.some(candidate => candidate.logit !== undefined);
-    return `<section class="dl-candidates"><h3>Output distribution <small>Top ${step.probabilities.length} candidates</small></h3><div class="dl-table-scroll"><table><thead><tr><th scope="col">Token</th><th scope="col">ID</th>${hasLogits ? '<th scope="col">Logit</th>' : ""}<th scope="col">Probability</th><th scope="col">Decision</th></tr></thead><tbody>${step.probabilities.map((candidate, index) => `<tr><th scope="row"><button type="button" data-candidate="${index}" aria-pressed="${candidateIndex === index}">${escapeHtml(visibleToken(candidate.token))}</button></th><td>${candidate.id ?? "—"}</td>${hasLogits ? `<td>${candidate.logit === undefined ? "—" : number(candidate.logit)}</td>` : ""}<td><span class="dl-probability-track"><span class="dl-probability-fill" style="width:${candidate.probability * 100}%"></span></span>${(candidate.probability * 100).toFixed(3)}%</td><td>${candidate.selected ? "✓ Selected" : ""}</td></tr>`).join("")}</tbody></table></div><div class="dl-candidate-detail dl-value-detail" aria-live="polite"></div></section>`;
+    return `<section class="dl-candidates"><h3>Output distribution <small>Top ${step.probabilities.length} candidates</small></h3><div class="dl-table-scroll"><table><thead><tr><th scope="col">Token</th><th scope="col">ID</th>${hasLogits ? '<th scope="col">Logit</th>' : ""}<th scope="col">Probability</th><th scope="col">Decision</th></tr></thead><tbody>${step.probabilities.map((candidate, index) => `<tr><th scope="row"><button type="button" data-candidate="${index}" aria-pressed="${candidateIndex === index}">${escapeHtml(visibleToken(candidate.token))}</button></th><td>${candidate.id ?? '<span class="dl-empty-val" aria-label="Not applicable">—</span>'}</td>${hasLogits ? `<td>${candidate.logit === undefined ? '<span class="dl-empty-val" aria-label="Not applicable">—</span>' : number(candidate.logit)}</td>` : ""}<td><span class="dl-probability-track"><span class="dl-probability-fill" style="width:${candidate.probability * 100}%"></span></span>${(candidate.probability * 100).toFixed(3)}%</td><td>${candidate.selected ? "✓ Selected" : ""}</td></tr>`).join("")}</tbody></table></div><div class="dl-candidate-detail dl-value-detail" aria-live="polite"></div></section>`;
   };
   const drawCandidate = () => {
     const candidate = stepNow().probabilities?.[candidateIndex];
@@ -409,6 +413,7 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
       event.preventDefault(); stop(); move(selected + (event.key === "ArrowLeft" ? -1 : 1), "#execution-step");
     }
   };
+  resetCandidateIndex();
   drawStep();
   return () => { stop(); window.removeEventListener("resize", alignSelection); root.onclick = null; root.oninput = null; root.onchange = null; root.removeEventListener("focusin", onFocus); root.onmouseover = null; root.onkeydown = null; };
 }

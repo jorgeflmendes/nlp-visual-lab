@@ -188,12 +188,12 @@ function renderInspectorTemplate(inferText: string = "lowest newer"): string {
       <!-- Stats row -->
       <div class="bpe-stats-container">
         <div class="dl-statistics">
-          <div><dt>SEQUENCES</dt><dd id="bpe-sSeq">—</dd></div>
-          <div><dt>CHARACTERS</dt><dd id="bpe-sChar">—</dd></div>
-          <div><dt>INITIAL |V|</dt><dd id="bpe-sInit">—</dd></div>
-          <div><dt>FINAL |V|</dt><dd id="bpe-sFinal">—</dd></div>
-          <div><dt>MERGES LEARNED</dt><dd id="bpe-sMerges">—</dd></div>
-          <div><dt>STOP REASON</dt><dd id="bpe-sStop" style="font-family: inherit; font-size: 0.73rem;">—</dd></div>
+          <div><dt>SEQUENCES</dt><dd id="bpe-sSeq"><span class="dl-empty-val" aria-label="Not calculated">—</span></dd></div>
+          <div><dt>CHARACTERS</dt><dd id="bpe-sChar"><span class="dl-empty-val" aria-label="Not calculated">—</span></dd></div>
+          <div><dt>INITIAL |V|</dt><dd id="bpe-sInit"><span class="dl-empty-val" aria-label="Not calculated">—</span></dd></div>
+          <div><dt>FINAL |V|</dt><dd id="bpe-sFinal"><span class="dl-empty-val" aria-label="Not calculated">—</span></dd></div>
+          <div><dt>MERGES LEARNED</dt><dd id="bpe-sMerges"><span class="dl-empty-val" aria-label="Not calculated">—</span></dd></div>
+          <div><dt>STOP REASON</dt><dd id="bpe-sStop" style="font-family: inherit; font-size: 0.73rem;"><span class="dl-empty-val" aria-label="Not calculated">—</span></dd></div>
         </div>
       </div>
 
@@ -242,7 +242,7 @@ function renderInspectorTemplate(inferText: string = "lowest newer"): string {
               <p class="dl-eyebrow" style="margin: 0 0 3px;">Evolving vocabulary</p>
               <h3>Learned subwords</h3>
             </div>
-            <span id="bpe-vocabPill" class="dl-state">|V| = —</span>
+            <span id="bpe-vocabPill" class="dl-state">|V| = <span class="dl-empty-val" aria-label="Not calculated">—</span></span>
           </div>
           <div id="bpe-vocab" class="bpe-vocab">
             <span class="bpe-hint">Train a tokenizer first.</span>
@@ -263,7 +263,7 @@ function renderInspectorTemplate(inferText: string = "lowest newer"): string {
               <p class="dl-eyebrow" style="margin: 0 0 3px;">Interactive test</p>
               <h3>Tokenizer playground</h3>
             </div>
-            <span id="bpe-count" class="dl-state">— tokens</span>
+            <span id="bpe-count" class="dl-state"><span class="dl-empty-val" aria-label="Not calculated">—</span> tokens</span>
           </div>
 
           <div class="bpe-playground-form">
