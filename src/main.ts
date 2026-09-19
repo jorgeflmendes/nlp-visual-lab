@@ -2,6 +2,11 @@ import "./styles.css";
 import { deepLearningTopics, topics } from "./data/topics.ts";
 import "./deepLearning.css";
 import "./methodWorkspace.css";
+import { getInitialTheme, applyTheme, toggleTheme } from "./theme.ts";
+
+// Initialize theme on script load
+const initialTheme = getInitialTheme();
+applyTheme(initialTheme);
 
 const appRoot = document.querySelector<HTMLDivElement>("#app");
 if (!appRoot) throw new Error("App root not found");
@@ -27,19 +32,33 @@ function route(): string {
   return location.hash.replace(/^#\/?/, "") || "home";
 }
 
+function themeToggleIcon(): string {
+  const isLight = document.documentElement.getAttribute("data-theme") === "light";
+  // Sun icon for dark mode (click to switch to light), Moon icon for light mode (click to switch to dark)
+  return isLight
+    ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`
+    : `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+}
+
 function sidebar(active: string): string {
   const navigation = [{ slug: "solvers", title: "Solvers" }, { slug: "deep-learning", title: "Deep Learning" }];
   const activeCategory = deepLearningTopics.some((topic) => topic.slug === active) ? "deep-learning" : topics.some((topic) => topic.slug === active) ? "solvers" : active;
+  const isLight = document.documentElement.getAttribute("data-theme") === "light";
   return `
     <header class="site-header">
       <a class="brand" href="#/home"><img src="${import.meta.env.BASE_URL}logo.svg" alt="NLP Visual Lab" width="168" height="40" /></a>
-      <nav aria-label="Categories">
-        ${navigation.map((topic, index) => `
-          <a href="#/${topic.slug}" class="${activeCategory === topic.slug ? "active" : ""}" ${activeCategory === topic.slug ? 'aria-current="page"' : ""}>
-            <small>0${index + 1}</small><span>${topic.title}</span>
-          </a>
-        `).join("")}
-      </nav>
+      <div class="header-right">
+        <nav aria-label="Categories">
+          ${navigation.map((topic, index) => `
+            <a href="#/${topic.slug}" class="${activeCategory === topic.slug ? "active" : ""}" ${activeCategory === topic.slug ? 'aria-current="page"' : ""}>
+              <small>0${index + 1}</small><span>${topic.title}</span>
+            </a>
+          `).join("")}
+        </nav>
+        <button id="theme-toggle-btn" class="theme-toggle" type="button" aria-label="Toggle theme (${isLight ? "light" : "dark"} mode active)" title="Switch to ${isLight ? "dark" : "light"} mode">
+          ${themeToggleIcon()}
+        </button>
+      </div>
     </header>
   `;
 }
@@ -127,6 +146,17 @@ async function render(): Promise<void> {
   void typesetMath();
   window.scrollTo(0, 0);
 }
+
+// Global delegated listener for the theme toggle button
+document.addEventListener("click", (event) => {
+  const target = event.target as HTMLElement | null;
+  const button = target?.closest<HTMLButtonElement>("#theme-toggle-btn");
+  if (!button) return;
+  const newTheme = toggleTheme();
+  button.setAttribute("aria-label", `Toggle theme (${newTheme} mode active)`);
+  button.title = `Switch to ${newTheme === "dark" ? "light" : "dark"} mode`;
+  button.innerHTML = themeToggleIcon();
+});
 
 window.addEventListener("hashchange", render);
 render();

@@ -71,7 +71,7 @@ export function bpePage(topic: DeepLearningTopic): string {
         <p id="bpe-filename" class="dl-input-hint" style="min-height:1.4em; margin-bottom:10px;"></p>
 
         <!-- Advanced settings toggleable -->
-        <details style="margin-bottom:16px; border:1px solid var(--line); border-radius:6px; background:#fcfdfa; padding:10px 14px;">
+        <details style="margin-bottom:16px; border:1px solid var(--line); border-radius:6px; background:#0e141a; padding:10px 14px;">
           <summary style="cursor:pointer; font-size:.78rem; font-weight:650; color:var(--green);">Segmentation &amp; Hyperparameters</summary>
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-top:12px;">
             <label>

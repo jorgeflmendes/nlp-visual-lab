@@ -598,7 +598,7 @@ export function bindTfidf(): void {
           <div style="font-size:0.82rem; margin-top:4px;"><span data-latex="N = ${state.N}" data-display="false"></span></div>
         </div>
       </div>
-      <div style="background:#fcfdfa; border:1px solid var(--line); border-radius:5px; padding:12px 14px; font-size:0.85rem; display:flex; flex-direction:column; gap:8px;">
+      <div style="background:var(--soft); border:1px solid var(--line); border-radius:5px; padding:12px 14px; font-size:0.85rem; display:flex; flex-direction:column; gap:8px;">
         <div><span data-latex="${tfLatexCalc}" data-display="false"></span></div>
         <div><span data-latex="${idfLatexCalc}" data-display="false"></span></div>
         <div style="padding-top:8px; border-top:1px solid var(--line); color:var(--green); font-weight:600;">
@@ -673,7 +673,7 @@ export function bindTfidf(): void {
     const cosLatex = `\\cos(\\mathbf{d}_A, \\mathbf{d}_B) = \\frac{\\mathbf{d}_A \\cdot \\mathbf{d}_B}{\\|\\mathbf{d}_A\\| \\|\\mathbf{d}_B\\|} = \\mathbf{${fmt(res.cosine)}}`;
 
     details.innerHTML = `
-      <div style="background:#fcfdfa; border:1px solid var(--line); border-radius:5px; padding:12px 14px; font-size:0.83rem; display:flex; flex-direction:column; gap:6px;">
+      <div style="background:var(--soft); border:1px solid var(--line); border-radius:5px; padding:12px 14px; font-size:0.83rem; display:flex; flex-direction:column; gap:6px;">
         <div><span data-latex="${dotLatex}" data-display="false"></span></div>
         <div><span data-latex="${normLatex}" data-display="false"></span></div>
         <div style="margin-top:4px; padding-top:6px; border-top:1px solid var(--line); color:var(--green); font-weight:600;">

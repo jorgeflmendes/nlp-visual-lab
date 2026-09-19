@@ -1,8 +1,8 @@
-/* TF-IDF Laboratory styles integrated with NLP Visual Lab design system */
+/* TF-IDF Laboratory styles - Modern SaaS Theme */
 
 .tfidf-workspace {
-  --tfidf-series: var(--green);
-  --tfidf-highlight: var(--green-soft);
+  --tfidf-series: var(--accent);
+  --tfidf-highlight: var(--accent-soft);
   min-width: 0;
 }
 
@@ -10,13 +10,23 @@
 .tfidf-workspace input[type="text"],
 .tfidf-workspace input[type="number"],
 .tfidf-workspace select {
-  border: 1px solid #c4cfc7;
-  border-radius: 5px;
-  background: #fcfdfa;
-  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--input-bg);
+  padding: 8px 12px;
   color: var(--ink);
-  font: 0.82rem/1.5 inherit;
+  font: 0.85rem/1.5 inherit;
   box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tfidf-workspace textarea:focus,
+.tfidf-workspace input[type="text"]:focus,
+.tfidf-workspace input[type="number"]:focus,
+.tfidf-workspace select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
 }
 
 .tfidf-workspace textarea {
@@ -26,7 +36,7 @@
 
 .tfidf-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--ink);
   margin-bottom: 6px;
@@ -42,27 +52,33 @@
 .tfidf-checks label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.76rem;
+  gap: 7px;
+  font-size: 0.78rem;
   color: var(--ink);
   cursor: pointer;
+}
+
+.tfidf-checks input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
 }
 
 .tfidf-empty {
   padding: 36px 20px;
   text-align: center;
-  color: var(--dl-muted);
-  font-size: 0.85rem;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .tfidf-idx {
-  font-family: Consolas, monospace;
-  font-size: 0.72rem;
-  color: var(--dl-muted);
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 0.74rem;
+  color: var(--muted);
   font-weight: 600;
 }
 
-/* Status bar across bottom of experiment panel */
+/* Status bar */
 #tfidf-status-msg {
   grid-column: 1 / -1;
   display: flex;
@@ -72,9 +88,9 @@
   min-height: 42px;
   padding: 11px 24px;
   border-top: 1px solid var(--line);
-  color: var(--dl-muted);
-  background: #f9faf7;
-  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--status-bar-bg);
+  font-size: 0.76rem;
   line-height: 1.5;
 }
 
@@ -82,19 +98,24 @@
 .tfidf-doc-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-top: 14px;
+  margin-bottom: 14px;
 }
 
 .tfidf-doc-card {
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fcfdfa;
-  padding: 12px;
+  border-radius: 8px;
+  background: var(--soft);
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  transition: border-color 0.15s ease;
+}
+
+.tfidf-doc-card:focus-within {
+  border-color: var(--accent);
 }
 
 .tfidf-doc-card-head {
@@ -106,25 +127,26 @@
 
 .tfidf-doc-card-head input {
   width: 120px;
-  font-family: Consolas, monospace;
+  font-family: Consolas, "SFMono-Regular", monospace;
   font-weight: 600;
-  font-size: 0.8rem;
-  padding: 5px 8px;
+  font-size: 0.82rem;
+  padding: 5px 10px;
 }
 
 .tfidf-doc-card-head button {
   border-color: transparent;
   background: transparent;
-  color: var(--dl-muted);
-  font-size: 0.74rem;
+  color: var(--muted);
+  font-size: 0.75rem;
   padding: 4px 8px;
   min-height: auto;
+  border-radius: 4px;
 }
 
 .tfidf-doc-card-head button:hover:not(:disabled) {
-  color: #b00020;
-  background: #faeceb;
-  border-color: #f1b3af;
+  color: var(--red-text);
+  background: var(--red-soft);
+  border-color: transparent;
 }
 
 .tfidf-file-input {
@@ -140,23 +162,23 @@
 .tfidf-config-details {
   margin-bottom: 16px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fcfdfa;
-  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--soft);
+  padding: 12px 16px;
 }
 
 .tfidf-config-details summary {
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 650;
-  color: var(--green);
+  color: var(--accent);
 }
 
 .tfidf-config-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 10px;
-  margin-top: 12px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 /* Stats container */
@@ -174,7 +196,7 @@
 
 /* Term-document matrix */
 .tfidf-matrix-card {
-  padding: 20px 24px;
+  padding: 22px 24px;
   background: var(--panel);
   border-bottom: 1px solid var(--line);
 }
@@ -183,9 +205,9 @@
   overflow: auto;
   max-height: 440px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
-  margin-top: 12px;
+  border-radius: 8px;
+  background: var(--panel);
+  margin-top: 14px;
 }
 
 .tfidf-matrix-table {
@@ -193,12 +215,12 @@
   border-spacing: 0;
   width: max-content;
   min-width: 100%;
-  font-size: 0.75rem;
+  font-size: 0.76rem;
 }
 
 .tfidf-matrix-table th,
 .tfidf-matrix-table td {
-  padding: 8px 12px;
+  padding: 9px 13px;
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   text-align: right;
@@ -209,10 +231,10 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #f3f6f3;
-  color: var(--dl-muted);
+  background: var(--matrix-head-bg);
+  color: var(--muted);
   font-weight: 600;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
 }
 
 .tfidf-matrix-table th:first-child {
@@ -220,41 +242,54 @@
   z-index: 3;
   min-width: 120px;
   text-align: left;
+  background: var(--matrix-head-bg);
 }
 
 .tfidf-matrix-table td:first-child {
   position: sticky;
   left: 0;
   z-index: 1;
-  background: #fcfdfa;
+  background: var(--matrix-row-bg);
   text-align: left;
-  font-family: Consolas, monospace;
+  font-family: Consolas, "SFMono-Regular", monospace;
   font-weight: 600;
   color: var(--ink);
 }
 
 .tfidf-cell {
   cursor: pointer;
-  font-family: Consolas, monospace;
+  font-family: Consolas, "SFMono-Regular", monospace;
   transition: background 0.15s ease;
+  color: var(--ink);
 }
 
 .tfidf-cell:hover {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
 .tfidf-cell.selected {
-  outline: 2px solid var(--green) !important;
+  outline: 2px solid var(--accent) !important;
   outline-offset: -2px;
-  background: var(--green-soft) !important;
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
   font-weight: 700;
 }
 
-.tfidf-heat1 { background: rgba(45, 80, 61, 0.08); }
-.tfidf-heat2 { background: rgba(45, 80, 61, 0.20); }
-.tfidf-heat3 { background: rgba(45, 80, 61, 0.40); }
-.tfidf-heat4 { background: rgba(45, 80, 61, 0.75); color: #fcfdfa; font-weight: 700; }
+/* Linear/SaaS Heat Map Palettes - calibrated for both Light & Dark */
+[data-theme="light"] .tfidf-heat1 { background: rgba(99, 102, 241, 0.08); }
+[data-theme="light"] .tfidf-heat2 { background: rgba(99, 102, 241, 0.18); }
+[data-theme="light"] .tfidf-heat3 { background: rgba(99, 102, 241, 0.32); }
+[data-theme="light"] .tfidf-heat4 { background: rgba(99, 102, 241, 0.55); color: #ffffff; font-weight: 700; }
+
+[data-theme="dark"] .tfidf-heat1,
+:root:not([data-theme="light"]) .tfidf-heat1 { background: rgba(129, 140, 248, 0.12); }
+[data-theme="dark"] .tfidf-heat2,
+:root:not([data-theme="light"]) .tfidf-heat2 { background: rgba(129, 140, 248, 0.24); }
+[data-theme="dark"] .tfidf-heat3,
+:root:not([data-theme="light"]) .tfidf-heat3 { background: rgba(129, 140, 248, 0.42); color: #ffffff; }
+[data-theme="dark"] .tfidf-heat4,
+:root:not([data-theme="light"]) .tfidf-heat4 { background: rgba(129, 140, 248, 0.70); color: #ffffff; font-weight: 700; }
 
 /* Inspector grid */
 .tfidf-inspector-grid {
@@ -269,7 +304,7 @@
 }
 
 .tfidf-card-clean {
-  padding: 20px 24px;
+  padding: 22px 24px;
   min-width: 0;
 }
 
@@ -278,14 +313,15 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .tfidf-card-header h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 650;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
 /* Vector similarity & Retrieval grid */
@@ -302,7 +338,7 @@
   grid-template-columns: minmax(0, 1fr) 60px;
   gap: 12px;
   align-items: center;
-  padding: 8px 0;
+  padding: 9px 0;
   border-bottom: 1px solid var(--line);
 }
 
@@ -312,15 +348,15 @@
 
 .tfidf-rank-bar {
   height: 5px;
-  margin-top: 4px;
+  margin-top: 5px;
   border-radius: 999px;
-  background: #d8ded8;
+  background: var(--line);
   overflow: hidden;
 }
 
 .tfidf-rank-fill {
   height: 100%;
-  background: var(--green);
+  background: var(--accent);
 }
 
 @media (max-width: 960px) {

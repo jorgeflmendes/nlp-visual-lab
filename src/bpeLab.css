@@ -1,15 +1,15 @@
-/* BPE Laboratory styles integrated with NLP Visual Lab design system */
+/* BPE Laboratory styles - Modern SaaS Theme */
 
 .bpe-workspace {
-  --bpe-series: #1f625b;
-  --bpe-highlight: #dcebe7;
+  --bpe-series: var(--accent);
+  --bpe-highlight: var(--accent-soft);
   min-width: 0;
 }
 
 /* Common form controls matching deep learning */
 .bpe-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--ink);
   margin-bottom: 6px;
@@ -19,13 +19,23 @@
 .bpe-workspace textarea,
 .bpe-workspace input[type="text"],
 .bpe-workspace input[type="number"] {
-  border: 1px solid #c4cfc7;
-  border-radius: 5px;
-  background: #fcfdfa;
-  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--input-bg);
+  padding: 8px 12px;
   color: var(--ink);
-  font: 0.82rem/1.5 inherit;
+  font: 0.85rem/1.5 inherit;
   box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bpe-workspace select:focus,
+.bpe-workspace textarea:focus,
+.bpe-workspace input[type="text"]:focus,
+.bpe-workspace input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
 }
 
 .bpe-workspace textarea {
@@ -43,14 +53,14 @@
 .bpe-checks label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.76rem;
+  gap: 7px;
+  font-size: 0.78rem;
   color: var(--ink);
   cursor: pointer;
 }
 
 .bpe-checks input[type="checkbox"] {
-  accent-color: var(--green);
+  accent-color: var(--accent);
   width: 15px;
   height: 15px;
 }
@@ -92,7 +102,7 @@
 }
 
 .bpe-card-clean {
-  padding: 20px 24px;
+  padding: 22px 24px;
   min-width: 0;
 }
 
@@ -105,14 +115,15 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .bpe-card-header h3 {
   margin: 0;
   font-size: 1.08rem;
   font-weight: 650;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
 /* Corpus sequences display */
@@ -133,9 +144,9 @@
 
 .bpe-idx {
   text-align: right;
-  font-size: 0.7rem;
-  color: var(--dl-muted);
-  font-family: Consolas, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: Consolas, "SFMono-Regular", monospace;
 }
 
 .bpe-tokens {
@@ -153,32 +164,33 @@
   min-width: 30px;
   padding: 3px 8px;
   border: 1px solid var(--line);
-  border-radius: 4px;
-  background: #fcfdfa;
+  border-radius: 5px;
+  background: var(--soft);
   font: 600 0.8rem Consolas, "SFMono-Regular", monospace;
   color: var(--ink);
+  transition: all 0.15s ease;
 }
 
 .bpe-token.learned {
-  border-color: var(--green);
-  background: var(--green-soft);
-  color: #174f49;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .bpe-sep {
   font-size: 0.72rem;
-  color: #a0b2aa;
+  color: var(--muted-light);
   user-select: none;
 }
 
 .bpe-empty {
   padding: 24px;
   border: 1px dashed var(--line);
-  border-radius: 6px;
-  color: var(--dl-muted);
-  font-size: 0.82rem;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
   text-align: center;
-  background: #fafbf8;
+  background: var(--soft);
 }
 
 /* Decision box */
@@ -206,40 +218,41 @@
   grid-template-columns: minmax(0, 1fr) 52px;
   gap: 10px;
   align-items: center;
-  padding: 7px 10px;
+  padding: 8px 12px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 6px;
   background: var(--soft);
+  transition: all 0.15s ease;
 }
 
 .bpe-pair.best {
-  border-color: var(--green);
-  background: #edf5ef;
+  border-color: var(--accent-glow);
+  background: var(--accent-soft);
 }
 
 .bpe-badge {
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 999px;
-  background: var(--green);
+  background: var(--accent);
   color: #fff;
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-family: Consolas, monospace;
+  font-family: Consolas, "SFMono-Regular", monospace;
 }
 
 .bpe-bar {
   height: 4px;
   margin-top: 4px;
   border-radius: 999px;
-  background: #d8ded8;
+  background: var(--line);
   overflow: hidden;
 }
 
 .bpe-fill {
   height: 100%;
-  background: var(--green);
+  background: var(--accent);
 }
 
 /* Vocabulary & Rules */
@@ -262,7 +275,8 @@
   margin: 0;
   font-size: 1.05rem;
   font-weight: 650;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
 .bpe-rules {
@@ -279,9 +293,9 @@
   gap: 10px;
   align-items: center;
   border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 7px 10px;
-  background: #fcfdfa;
+  border-radius: 6px;
+  padding: 7px 12px;
+  background: var(--soft);
 }
 
 .bpe-rule-num {
@@ -289,11 +303,12 @@
   height: 24px;
   display: grid;
   place-items: center;
-  background: var(--soft);
+  background: var(--panel);
   border-radius: 4px;
-  font-size: 0.7rem;
-  font-family: Consolas, monospace;
+  font-size: 0.72rem;
+  font-family: Consolas, "SFMono-Regular", monospace;
   font-weight: 600;
+  color: var(--muted);
 }
 
 /* Tokenizer playground form and results */
@@ -329,9 +344,9 @@
 
 .bpe-trace-details summary {
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 650;
-  color: var(--green);
+  color: var(--accent);
 }
 
 .bpe-trace {
@@ -345,20 +360,20 @@
 .bpe-trace-item {
   background: var(--soft);
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 6px;
   padding: 8px 12px;
 }
 
 .bpe-trace-item .bpe-meta {
-  font-size: 0.7rem;
-  color: var(--dl-muted);
+  font-size: 0.72rem;
+  color: var(--muted);
   margin-bottom: 4px;
-  font-family: Consolas, monospace;
+  font-family: Consolas, "SFMono-Regular", monospace;
 }
 
 .bpe-hint {
-  font-size: 0.75rem;
-  color: var(--dl-muted);
+  font-size: 0.76rem;
+  color: var(--muted);
   line-height: 1.5;
 }
 
