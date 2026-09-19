@@ -143,7 +143,19 @@ function recordCells(layer: any, tokens: TraceToken[], stage: string, steps: Exe
       assertEquivalent(Float32Array.from(previousCell, (value, unit) => gates[1].values[unit] * value + gates[0].values[unit] * candidate!.values[unit]), currentCell);
       assertEquivalent(Float32Array.from(currentCell, (value, unit) => gates[2].values[unit] * Math.tanh(value)), output[1].dataSync());
       const token = tokens[position];
-      steps.push({ name: `${stage === "Encoder" ? "Encode" : "Read"} ${position + 1} · ${token?.text ?? "padding"}`, stage, operation: "LSTM cell", description: "The learned gates update cell memory and expose a hidden state. Select a unit to compare its values across timesteps. This model uses hard sigmoid gates.", formula: "c_t=f_t\\odot c_{t-1}+i_t\\odot\\tilde c_t,\\quad h_t=o_t\\odot\\tanh(c_t)", tokens, selectedToken: position, tensors: [snapshot("Cell input", inputs[0], ["batch", "feature"]), snapshot("Previous hidden state", inputs[1], ["batch", "unit"]), snapshot("Previous cell memory", inputs[2], ["batch", "unit"]), ...gates, ...(candidate ? [candidate] : []), snapshot("Cell memory", output[2], ["batch", "unit"]), snapshot("Hidden state", output[1], ["batch", "unit"])] });
+      const mean = (vals: number[] | Float32Array) => {
+        let sum = 0;
+        for (let i = 0; i < vals.length; i++) sum += vals[i];
+        return vals.length ? sum / vals.length : 0;
+      };
+      const avgForget = mean(gates[1].values);
+      const avgInput = mean(gates[0].values);
+      const avgOutput = mean(gates[2].values);
+      const isEncoder = stage === "Encoder";
+      const desc = isEncoder
+        ? `Encoding character “${token?.text ?? "padding"}” (step ${position + 1}/${tokens.length}). The cell balances retention of previous context (mean forget gate: ${(avgForget * 100).toFixed(1)}%) with new character information (mean input gate: ${(avgInput * 100).toFixed(1)}%). State vector h will transfer to the decoder.`
+        : `Processing word “${token?.text ?? "padding"}” (step ${position + 1}/${tokens.length}). Forget gate retention averages ${(avgForget * 100).toFixed(1)}%; input gate activation averages ${(avgInput * 100).toFixed(1)}%. Output gate exposes ${(avgOutput * 100).toFixed(1)}% of squashed memory tanh(c_t) as hidden state h_t.`;
+      steps.push({ name: `${isEncoder ? "Encode" : "Read"} ${position + 1} · ${token?.text ?? "padding"}`, stage, operation: "LSTM cell", description: desc, formula: "c_t=f_t\\odot c_{t-1}+i_t\\odot\\tilde c_t,\\quad h_t=o_t\\odot\\tanh(c_t)", tokens, selectedToken: position, tensors: [snapshot("Cell input", inputs[0], ["batch", "feature"]), snapshot("Previous hidden state", inputs[1], ["batch", "unit"]), snapshot("Previous cell memory", inputs[2], ["batch", "unit"]), ...gates, ...(candidate ? [candidate] : []), snapshot("Cell memory", output[2], ["batch", "unit"]), snapshot("Hidden state", output[1], ["batch", "unit"])] });
       position += 1;
       return output;
     } finally {
@@ -173,7 +185,8 @@ async function runSentiment(text: string, progress: ModelProgress): Promise<Exec
     const reference = Array.from(await baseline.data()) as number[];
     await yieldToPage();
     embeddings = model.layers[0].apply(input);
-    steps.push({ name: "Learned word vectors", stage: "Embedding", operation: "Embedding", description: "Each vocabulary ID selects a row from the trained embedding table. Position includes leading padding.", tokens: tokens.slice(padding), tensors: [snapshot("Embeddings", embeddings, ["batch", "position", "coordinate"])] });
+    const embShape = embeddings.shape;
+    steps.push({ name: "Learned word vectors", stage: "Embedding", operation: "Embedding", description: `Each vocabulary ID selects a learned ${embShape.at(-1)}-dimensional dense vector. Padded positions (0) use the model's dedicated zero/padding embedding row.`, tokens: tokens.slice(padding), tensors: [snapshot("Embeddings", embeddings, ["batch", "position", "coordinate"])] });
     const restore = recordCells(model.layers[1], tokens, "Memory", steps);
     const activation = model.layers.at(-1).activation;
     const apply = activation.apply;
@@ -182,14 +195,19 @@ async function runSentiment(text: string, progress: ModelProgress): Promise<Exec
     const memory = steps.splice(2);
     if (padding) {
       const paddedSteps = memory.splice(0, padding);
-      steps.push({ name: 'Padding recurrence', stage: 'Memory', operation: 'LSTM cells', description: `The ${padding} leading padding positions are real recurrent operations. Select a padding position to inspect its states and gates.`, tensors: paddedSteps[0].tensors.map((tensor, index) => ({ ...tensor, shape: [padding, tensor.values.length], values: Float32Array.from(paddedSteps.flatMap(step => Array.from(step.tensors[index].values))), axes: ['padding position', 'unit'] })) });
+      steps.push({ name: 'Padding recurrence', stage: 'Memory', operation: 'LSTM cells', description: `${padding} leading padding steps ran through the recurrent cell. The LSTM state initialized at zero and accumulated padding transitions before reaching the first real word.`, tensors: paddedSteps[0].tensors.map((tensor, index) => ({ ...tensor, shape: [padding, tensor.values.length], values: Float32Array.from(paddedSteps.flatMap(step => Array.from(step.tensors[index].values))), axes: ['padding position', 'unit'] })) });
     }
     memory.forEach(step => { step.tokens = tokens.slice(padding); step.selectedToken! -= padding; step.name = `Word ${step.selectedToken! + 1} · ${step.tokens[step.selectedToken!].text}`; });
     steps.push(...memory);
     const values = Array.from(await prediction.data()) as number[];
     assertEquivalent(values, reference);
     const score = values[0];
-    steps.push({ name: "Sentiment decision", stage: "Output", operation: "Dense + sigmoid", description: "The final hidden state is projected to a binary sentiment score. The recorded pass matches a separate uninstrumented model run.", formula: "p(\\mathrm{positive})=\\sigma(Wh_T+b)", tensors: [...(classifierLogit ? [classifierLogit] : []), snapshot("Positive probability", prediction, ["batch", "class"])], probabilities: [{ token: "negative", probability: 1 - score, selected: score < .5 }, { token: "positive", probability: score, selected: score >= .5 }] });
+    const rawLogit = classifierLogit?.values[0];
+    const logitDesc = rawLogit !== undefined ? ` (pre-activation logit z = ${rawLogit.toFixed(3)})` : "";
+    const decisionDesc = score >= 0.5
+      ? `The dense layer projects the final hidden state h_T${logitDesc}. Sigmoid activation yields p(positive) = ${(score * 100).toFixed(1)}% ≥ 50%, classifying this review as positive.`
+      : `The dense layer projects the final hidden state h_T${logitDesc}. Sigmoid activation yields p(positive) = ${(score * 100).toFixed(1)}% < 50%, classifying this review as negative (confidence ${( (1 - score) * 100 ).toFixed(1)}%).`;
+    steps.push({ name: "Sentiment decision", stage: "Output", operation: "Dense + sigmoid", description: decisionDesc, formula: "p(\\mathrm{positive})=\\sigma(Wh_T+b)", tensors: [...(classifierLogit ? [classifierLogit] : []), snapshot("Positive probability", prediction, ["batch", "class"])], probabilities: [{ token: "negative", probability: 1 - score, selected: score < .5 }, { token: "positive", probability: score, selected: score >= .5 }] });
     return { output: score >= .5 ? "positive" : "negative", outputLabel: "Review sentiment", backend: `TensorFlow.js · ${tf.getBackend()}`, elapsed: performance.now() - started, steps, note: "The gate, hidden-state and cell-memory tensors are captured directly from the TensorFlow.js LSTM cell. Timing includes the numerical verification pass." };
   } finally { dispose([input, baseline, prediction, embeddings]); }
 }
@@ -219,6 +237,21 @@ async function runTranslation(text: string, progress: ModelProgress): Promise<Ex
     try { states = encoder.predict(input); } finally { restore(); }
     states.forEach((state, index) => assertEquivalent(state.dataSync(), baseline[index].dataSync()));
     dispose(baseline); baseline = [];
+
+    // Context handover step: expose the information bottleneck (final encoder states initializing the decoder)
+    const finalH = snapshot("Final encoder hidden state (h_T)", states[0], ["batch", "unit"]);
+    const finalC = snapshot("Final encoder cell memory (c_T)", states[1], ["batch", "unit"]);
+    steps.push({
+      name: "Encoder → Decoder handover",
+      stage: "Encoder",
+      operation: "State transfer (Information bottleneck)",
+      description: `The encoder finishes reading the English sequence. The final hidden state h_T and cell memory c_T (${states[0].shape.at(-1)} units each) compress the entire semantic content of the input to initialize the decoder: s_0 = h_T and c_0 = c_T. In classic Seq2Seq without attention, this fixed-size vector is the sole communication bridge between source and target.`,
+      formula: "s_0^{\\text{dec}}=h_T^{\\text{enc}},\\quad c_0^{\\text{dec}}=c_T^{\\text{enc}}",
+      tokens,
+      selectedToken: text.length - 1,
+      tensors: [finalH, finalC],
+    });
+
     let targetIndex = metadata.target_token_index["\t"];
     const generated: TraceToken[] = [{ text: "[start]", id: targetIndex, position: 0 }];
     for (let index = 0; index < metadata.max_decoder_seq_length; index += 1) {
@@ -240,8 +273,11 @@ async function runTranslation(text: string, progress: ModelProgress): Promise<Ex
         const choices = candidates(distribution, label).map(candidate => ({ ...candidate, logit: logits?.values[candidate.id!] }));
         const chosen = choices[0].id!;
         const cell = cellSteps[0];
-        steps.push({ ...cell, name: `Decode ${index + 1} · ${label(targetIndex)}`, tokens: generated.slice(), selectedToken: generated.length - 1, description: "The decoder receives the preceding character and encoder or previous decoder states. Its real gates produce the next hidden state and memory." });
-        steps.push({ name: `Choose character ${index + 1} · ${label(chosen)}`, stage: "Decoder", operation: "Dense + softmax", description: "Greedy decoding selects the most probable character. Its ID becomes the next decoder input.", formula: "p(y_t)=\\operatorname{softmax}(Wh_t+b)", tensors: [...(logits ? [logits] : []), snapshot("Character probabilities", predicted[0], ["batch", "position", "character"])], probabilities: choices, tokens: generated.concat({ text: label(chosen), id: chosen, position: index + 1 }), selectedToken: generated.length });
+        const isEnd = reverse[chosen] === "\n";
+        const topProb = (choices[0].probability * 100).toFixed(1);
+        const secondChoice = choices[1] ? ` runner-up “${choices[1].token}” at ${(choices[1].probability * 100).toFixed(1)}%` : "";
+        steps.push({ ...cell, name: `Decode ${index + 1} · ${label(targetIndex)}`, tokens: generated.slice(), selectedToken: generated.length - 1, description: `The decoder cell takes preceding token “${label(targetIndex)}” (target ID ${targetIndex}) and prior hidden/cell states [h_{t-1}, c_{t-1}]. Its internal gates compute the new representation h_t.` });
+        steps.push({ name: `Choose character ${index + 1} · ${label(chosen)}`, stage: "Decoder", operation: "Dense + softmax", description: `Dense projection and softmax produce a distribution across target characters. Greedy selection picks “${label(chosen)}” with ${topProb}% probability (${secondChoice}).${isEnd ? " Emitted [end] marker terminates autoregressive sequence generation." : ""}`, formula: "p(y_t)=\\operatorname{softmax}(Wh_t+b)", tensors: [...(logits ? [logits] : []), snapshot("Character probabilities", predicted[0], ["batch", "position", "character"])], probabilities: choices, tokens: generated.concat({ text: label(chosen), id: chosen, position: index + 1 }), selectedToken: generated.length });
         dispose(states); states = [predicted[1], predicted[2]];
         predicted = [predicted[0]];
         targetIndex = chosen;
@@ -261,15 +297,15 @@ const dateLayers: Record<string, { name: string; stage: string; description: str
   input2: { name: "Previous output IDs", stage: "Input", description: "A start marker followed by the characters already chosen by greedy decoding. This is the final causal decoder pass.", axes: ["batch", "target position"] },
   embedding_Embedding1: { name: "Source embeddings", stage: "Embedding", description: "Each input character ID selects a learned vector.", axes: ["batch", "source position", "coordinate"] },
   embedding_Embedding2: { name: "Decoder embeddings", stage: "Embedding", description: "Previous output characters select the decoder's learned vectors.", axes: ["batch", "target position", "coordinate"] },
-  lstm_LSTM1: { name: "Encoder hidden states", stage: "Encoder", description: "The encoder reads the source and returns a hidden state for every input position.", axes: ["batch", "source position", "unit"] },
+  lstm_LSTM1: { name: "Encoder hidden states", stage: "Encoder", description: "The encoder LSTM reads input characters sequentially, producing recurrent hidden state vectors h_1..h_{12} (64 units each). In the attention layer, these states serve as both Keys (for compatibility matching) and Values (to form context).", formula: "h_i=\\operatorname{LSTM}(x_i, h_{i-1})", axes: ["batch", "source position", "unit"] },
   encoderLast: { name: "Final encoder state", stage: "Encoder", description: "This trained architecture uses the final encoder hidden state to initialise both decoder hidden state and cell memory.", axes: ["batch", "unit"] },
-  lstm_LSTM2: { name: "Decoder hidden states", stage: "Decoder", description: "The decoder processes preceding output characters from left to right.", axes: ["batch", "target position", "unit"] },
-  dot_Dot1: { name: "Attention scores", stage: "Attention", description: "Unscaled dot products compare each decoder state with each encoder state. This model does not divide by the square root of the feature dimension.", formula: "s_{t,i}=h_t^{\\mathrm{decoder}}\\cdot h_i^{\\mathrm{encoder}}", axes: ["batch", "target position", "source position"] },
-  attention: { name: "Attention weights", stage: "Attention", description: "Softmax normalises the compatibility scores across source positions. Select a target row and source cell to inspect its exact weight.", formula: "\\alpha_{t,i}=\\frac{\\exp(s_{t,i})}{\\sum_j\\exp(s_{t,j})}", axes: ["batch", "target position", "source position"] },
-  context: { name: "Weighted context", stage: "Attention", description: "The attention weights form a weighted sum of encoder states for each output position.", formula: "c_t=\\sum_i\\alpha_{t,i}h_i^{\\mathrm{encoder}}", axes: ["batch", "target position", "coordinate"] },
-  concatenate_Concatenate1: { name: "Context + decoder state", stage: "Decoder", description: "The context vector and decoder state are joined along their feature axis.", axes: ["batch", "target position", "coordinate"] },
-  time_distributed_TimeDistributed1: { name: "Hidden projection", stage: "Decoder", description: "The same trained dense layer and tanh activation transform each output position.", axes: ["batch", "target position", "coordinate"] },
-  time_distributed_TimeDistributed2: { name: "Character probabilities", stage: "Output", description: "The final projection and softmax produce a distribution over the output character vocabulary at every target position.", axes: ["batch", "target position", "character"] },
+  lstm_LSTM2: { name: "Decoder hidden states", stage: "Decoder", description: "The decoder LSTM generates recurrent state s_t at step t by reading previous output characters. In the attention layer, s_t acts as the Query vector probing the encoder representations.", formula: "s_t=\\operatorname{LSTM}(y_{t-1}, s_{t-1})", axes: ["batch", "target position", "unit"] },
+  dot_Dot1: { name: "Attention scores (Dot product)", stage: "Attention", description: "Unscaled dot product computing affinity between the decoder state s_t (acting as Query Q_t) and encoder states h_i (acting as Keys K_i): score(t, i) = s_t^\\top h_i.", formula: "e_{t,i}=s_t^\\top h_i", axes: ["batch", "target position", "source position"] },
+  attention: { name: "Attention distribution (softmax)", stage: "Attention", description: "Softmax normalisation across source positions produces attention weights α_{t,i}. Select a target row and source cell to inspect its exact weight.", formula: "\\alpha_{t,i}=\\frac{\\exp(e_{t,i})}{\\sum_j\\exp(e_{t,j})}", axes: ["batch", "target position", "source position"] },
+  context: { name: "Context vector (weighted sum)", stage: "Attention", description: "Weighted linear combination of encoder states h_i (acting as Values V_i) using attention weights α_{t,i}, concentrating source information relevant to decoding step t into c_t.", formula: "c_t=\\sum_i\\alpha_{t,i}h_i", axes: ["batch", "target position", "coordinate"] },
+  concatenate_Concatenate1: { name: "Context + decoder state concatenation", stage: "Decoder", description: "The context vector c_t and current decoder hidden state s_t are concatenated along their feature axis to inform character logits.", formula: "[c_t; s_t]", axes: ["batch", "target position", "coordinate"] },
+  time_distributed_TimeDistributed1: { name: "Hidden projection", stage: "Decoder", description: "A shared dense layer with tanh activation projects the combined context and query representations.", formula: "\\tilde{s}_t=\\tanh(W_c[c_t; s_t]+b_c)", axes: ["batch", "target position", "coordinate"] },
+  time_distributed_TimeDistributed2: { name: "Character probabilities", stage: "Output", description: "The final projection and softmax produce a distribution over the output character vocabulary at every target position.", formula: "p(y_t)=\\operatorname{softmax}(W_s\\tilde{s}_t+b_s)", axes: ["batch", "target position", "character"] },
 };
 
 async function runDateAttention(text: string, progress: ModelProgress): Promise<ExecutionTrace> {
@@ -316,21 +352,67 @@ async function runDateAttention(text: string, progress: ModelProgress): Promise<
     const weights = tensors[attentionIndex].dataSync();
     const matrix = Array.from({ length: 10 }, (_, row) => Array.from(weights.slice(row * 12, row * 12 + 12)) as number[]);
     matrix.forEach(row => candidates(row, id => sourceTokens[id].text));
-    const steps: ExecutionStep[] = model.layers.map((layer: any, index: number) => {
-      const detail = dateLayers[layer.name];
-      return { name: detail?.name ?? layer.name, stage: detail?.stage ?? "Decoder", operation: layer.getClassName(), description: detail?.description ?? "An output tensor from the trained graph.", formula: detail?.formula, tensors: [snapshot(detail?.name ?? layer.name, tensors[index], detail?.axes)], ...(layer.name === "input1" || layer.name === "embedding_Embedding1" || layer.name === "lstm_LSTM1" ? { tokens: sourceTokens } : {}), ...(layer.name === "attention" ? { attention: { source: sourceTokens.map(token => token.text), target: targetTokens.map(token => token.text), weights: matrix, row: 0 } } : {}) };
-    });
+    const encoderSteps: ExecutionStep[] = model.layers
+      .filter((layer: any) => {
+        const detail = dateLayers[layer.name];
+        return detail?.stage === "Input" || detail?.stage === "Embedding" || detail?.stage === "Encoder";
+      })
+      .map((layer: any) => {
+        const detail = dateLayers[layer.name];
+        const index = model.layers.findIndex((l: any) => l.name === layer.name);
+        return {
+          name: detail?.name ?? layer.name,
+          stage: detail?.stage ?? "Encoder",
+          operation: layer.getClassName(),
+          description: detail?.description ?? "An output tensor from the trained graph.",
+          formula: detail?.formula,
+          tensors: [snapshot(detail?.name ?? layer.name, tensors[index], detail?.axes)],
+          ...(layer.name === "input1" || layer.name === "embedding_Embedding1" || layer.name === "lstm_LSTM1" ? { tokens: sourceTokens } : {}),
+        };
+      });
     decisions.forEach((step, position) => {
-      step.tokens = targetTokens; step.selectedToken = position;
-      step.description = "The preceding character enters the decoder. Its hidden state scores the source, attention forms a weighted context, and the output distribution selects the next character.";
-      for (const [layerName, name, axis] of [["lstm_LSTM2", "Decoder hidden state", "unit"], ["dot_Dot1", "Attention scores", "source position"], ["attention", "Attention weights", "source position"], ["context", "Weighted context", "coordinate"]]) {
+      const generatedTokens = targetTokens.slice(0, position + 1);
+      step.tokens = generatedTokens;
+      step.selectedToken = position;
+      const emittedChar = targetTokens[position]?.text ?? "";
+      const weightsRow = matrix[position] ?? [];
+      let maxWeight = -1;
+      let maxSourceIdx = 0;
+      weightsRow.forEach((w, idx) => {
+        if (w > maxWeight) { maxWeight = w; maxSourceIdx = idx; }
+      });
+      const attendedToken = sourceTokens[maxSourceIdx]?.text ?? "";
+      const topPct = (maxWeight * 100).toFixed(1);
+      step.description = `Generating output character ${position + 1}/10 (“${emittedChar}”). Decoder state s_${position} (acting as Query Q) compares compatibility against all 12 encoder hidden states h_i (acting as Keys K), concentrating ${topPct}% attention weight on source position ${maxSourceIdx} (“${attendedToken}”). The weighted combination of encoder states (acting as Values V) forms context c_${position}, which concatenates with s_${position} to drive greedy character selection.`;
+      for (const [layerName, name, axis, desc] of [
+        ["lstm_LSTM2", "Decoder hidden state (Query s_t)", "unit", "Current decoder LSTM recurrent state s_t, functioning as Query Q_t in the cross-attention calculation."],
+        ["dot_Dot1", "Attention scores (s_t · h_i)", "source position", "Dot product affinity between decoder state s_t and encoder states h_i (e_{t,i} = s_tᵀ h_i)."],
+        ["attention", "Attention weights (softmax)", "source position", "Normalised probability distribution α_{t,i} over the 12 input character positions."],
+        ["context", "Context vector (∑ α_i h_i)", "coordinate", "Weighted sum of encoder representations h_i, concentrating relevant input information into c_t."]
+      ]) {
         const tensor = tensors[model.layers.findIndex((layer: any) => layer.name === layerName)];
         const width = tensor.shape.at(-1);
-        step.tensors.push({ name, shape: [width], values: Float32Array.from(tensor.dataSync().slice(position * width, (position + 1) * width)), dtype: tensor.dtype, axes: [axis] });
+        step.tensors.push({ name, shape: [width], values: Float32Array.from(tensor.dataSync().slice(position * width, (position + 1) * width)), dtype: tensor.dtype, axes: [axis], description: desc });
       }
-      step.attention = { source: sourceTokens.map(token => token.text), target: targetTokens.map(token => token.text), weights: matrix, row: position };
+      step.attention = {
+        source: sourceTokens.map(token => token.text),
+        target: generatedTokens.map(token => token.text),
+        weights: matrix.slice(0, position + 1),
+        row: position,
+      };
     });
-    steps.push(...decisions, { name: "Normalised date", stage: "Output", operation: "Character decoding", description: "Greedy character IDs form the final date. The layer probe matches the probabilities used at every decoding position.", tokens: targetTokens, tensors: [{ name: "Output character IDs", shape: [10], values: chosen, dtype: "int32", axes: ["position"] }] });
+    const steps: ExecutionStep[] = [
+      ...encoderSteps,
+      ...decisions,
+      {
+        name: "Normalised date",
+        stage: "Output",
+        operation: "Character decoding",
+        description: "Greedy character IDs form the final date. The layer probe matches the probabilities used at every decoding position.",
+        tokens: targetTokens,
+        tensors: [{ name: "Output character IDs", shape: [10], values: chosen, dtype: "int32", axes: ["position"] }],
+      },
+    ];
     return { output, outputLabel: "Normalised date", backend: `TensorFlow.js · ${tf.getBackend()}`, elapsed: performance.now() - started, steps, note: "Attention values are exposed by the trained graph. The layer tensors record the final causal decoding pass; the character decisions retain their original per-position distributions." };
   } finally { dispose([encoder, decoderInput, ...tensors]); }
 }
@@ -371,7 +453,13 @@ async function runTransformer(text: string, progress: ModelProgress): Promise<Ex
       for (let position = 0; position < positions; position += 1) {
         const row = logits.data.subarray(position * vocabulary, (position + 1) * vocabulary);
         const probabilities = candidates(row, decode, true).map(candidate => ({ ...candidate, selected: position === positions - 1 && candidate.selected }));
-        steps.push({ name: `Prompt ${position + 1} · next-token distribution`, stage: "Decoder", operation: "LM head + softmax", description: "The causal model uses the prompt through the selected position to predict the next token. The full vocabulary supplies the softmax denominator; the eight strongest candidates are shown.", formula: "p(x_{t+1}=i)=\\frac{\\exp(z_i)}{\\sum_j\\exp(z_j)}", tokens, selectedToken: position, probabilities, tensors: position === positions - 1 ? [{ name: "Vocabulary logits", shape: [vocabulary], values: Float32Array.from(row), dtype: logits.type, axes: ["vocabulary ID"] }] : [{ name: "Top candidate logits", shape: [probabilities.length], values: probabilities.map(candidate => candidate.logit!), dtype: logits.type, axes: ["candidate rank"], description: "An exact subset of the vocabulary logits, ordered by descending probability." }] });
+        const currentTokenText = tokens[position]?.text ?? "";
+        const topPred = probabilities[0]?.token ?? "";
+        const topProb = ((probabilities[0]?.probability ?? 0) * 100).toFixed(1);
+        const promptStepDesc = position === positions - 1
+          ? `End of prompt at position ${position + 1} (“${currentTokenText}”). Softmax over all ${vocabulary.toLocaleString()} vocabulary logits yields the initial continuation distribution. Top prediction is “${topPred}” (${topProb}%).`
+          : `Causal conditioning through prompt position ${position + 1} (“${currentTokenText}”). Attention masks future tokens; the model predicts next token “${topPred}” (${topProb}%).`;
+        steps.push({ name: `Prompt ${position + 1} · next-token distribution`, stage: "Decoder", operation: "LM head + softmax", description: promptStepDesc, formula: "p(x_{t+1}=i)=\\frac{\\exp(z_i)}{\\sum_j\\exp(z_j)}", tokens, selectedToken: position, probabilities, tensors: position === positions - 1 ? [{ name: "Vocabulary logits", shape: [vocabulary], values: Float32Array.from(row), dtype: logits.type, axes: ["vocabulary ID"] }] : [{ name: "Top candidate logits", shape: [probabilities.length], values: probabilities.map(candidate => candidate.logit!), dtype: logits.type, axes: ["candidate rank"], description: "An exact subset of the vocabulary logits, ordered by descending probability." }] });
       }
     }
     if (call > 0) {
@@ -384,12 +472,15 @@ async function runTransformer(text: string, progress: ModelProgress): Promise<Ex
         for (let head = 0; head < batch * heads; head++) last.set(tensor.data.subarray((head * length + length - 1) * dimensions, (head * length + length) * dimensions), head * dimensions);
         updates.push({ name: `Block ${Number(match[1]) + 1} ${match[2]} cache`, shape: [batch, heads, 1, dimensions], values: last, dtype: tensor.type, axes: ["batch", "head", "new position", "coordinate"], description: `Last position of the returned cache [${tensor.dims.join(" × ")}], at position ${length - 1}.` });
       }
-      if (updates.length) generation.push({ name: `Cache update ${call} · position ${ids.length + call - 1}`, stage: "Decoder", operation: "Key/value cache update", description: "The latest input token adds one key and one value per head. Earlier positions remain in the cache; only the new position is shown here.", tokens: [selected.at(-1)!], selectedToken: 0, tensors: updates });
+      if (updates.length) generation.push({ name: `Cache update ${call} · position ${ids.length + call - 1}`, stage: "Decoder", operation: "Key/value cache update", description: `Autoregressive step ${call}: appended key and value vectors for newly generated token “${selected.at(-1)?.text ?? ""}” across all 12 attention heads. Earlier cached states are preserved without recomputation.`, tokens: [selected.at(-1)!], selectedToken: 0, tensors: updates });
     }
     const row = logits.data.subarray((positions - 1) * vocabulary, positions * vocabulary);
     const probabilities = candidates(row, decode, true);
+    const winner = probabilities[0];
+    const winProb = (winner.probability * 100).toFixed(1);
+    const runnerUp = probabilities[1] ? `, followed by “${probabilities[1].token}” (${(probabilities[1].probability * 100).toFixed(1)}%)` : "";
     selected.push({ text: decode(probabilities[0].id!), id: probabilities[0].id, position: ids.length + call });
-    generation.push({ name: `Generate ${call + 1} · ${probabilities[0].token}`, stage: "Decoder", operation: "Greedy next-token choice", description: "The highest-probability vocabulary token is appended to the context. The next forward pass reuses the model's real key/value cache.", formula: "x_{t+1}=\\operatorname{argmax}_i z_i", tokens: tokens.concat(selected), selectedToken: tokens.length + selected.length - 1, probabilities, tensors: [{ name: "Vocabulary logits", shape: [vocabulary], values: Float32Array.from(row), dtype: logits.type, axes: ["vocabulary ID"] }] });
+    generation.push({ name: `Generate ${call + 1} · ${probabilities[0].token}`, stage: "Decoder", operation: "Greedy next-token choice", description: `Greedy decoding (argmax) selects token ID ${winner.id} (“${winner.token}”) with ${winProb}% probability${runnerUp}. The sequence advances to length ${ids.length + call + 1}.`, formula: "x_{t+1}=\\operatorname{argmax}_i z_i", tokens: tokens.concat(selected), selectedToken: tokens.length + selected.length - 1, probabilities, tensors: [{ name: "Vocabulary logits", shape: [vocabulary], values: Float32Array.from(row), dtype: logits.type, axes: ["vocabulary ID"] }] });
     call += 1;
     return result;
   };

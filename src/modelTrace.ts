@@ -42,3 +42,31 @@ export interface ExecutionTrace {
   steps: ExecutionStep[];
   note?: string;
 }
+
+export interface StepGroup {
+  stage: string;
+  startIndex: number;
+  endIndex: number;
+  steps: { step: ExecutionStep; index: number }[];
+}
+
+export function groupExecutionSteps(steps: ExecutionStep[]): StepGroup[] {
+  const groups: StepGroup[] = [];
+  for (let index = 0; index < steps.length; index++) {
+    const step = steps[index];
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup && lastGroup.stage === step.stage) {
+      lastGroup.endIndex = index;
+      lastGroup.steps.push({ step, index });
+    } else {
+      groups.push({
+        stage: step.stage,
+        startIndex: index,
+        endIndex: index,
+        steps: [{ step, index }],
+      });
+    }
+  }
+  return groups;
+}
+
