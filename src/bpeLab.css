@@ -1,0 +1,381 @@
+/* BPE Laboratory styles integrated with NLP Visual Lab design system */
+
+.bpe-workspace {
+  --bpe-series: #1f625b;
+  --bpe-highlight: #dcebe7;
+  min-width: 0;
+}
+
+/* Common form controls matching deep learning */
+.bpe-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.bpe-workspace select,
+.bpe-workspace textarea,
+.bpe-workspace input[type="text"],
+.bpe-workspace input[type="number"] {
+  border: 1px solid #c4cfc7;
+  border-radius: 5px;
+  background: #fcfdfa;
+  padding: 8px 10px;
+  color: var(--ink);
+  font: 0.82rem/1.5 inherit;
+  box-sizing: border-box;
+}
+
+.bpe-workspace textarea {
+  font-family: Consolas, "SFMono-Regular", monospace;
+  resize: vertical;
+}
+
+.bpe-checks {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.bpe-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.bpe-checks input[type="checkbox"] {
+  accent-color: var(--green);
+  width: 15px;
+  height: 15px;
+}
+
+.bpe-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* Stats row inside execution container */
+.bpe-stats-container {
+  padding: 4px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.bpe-stats-container .dl-statistics {
+  margin: 0;
+  border-block: none;
+  padding: 10px 0;
+}
+
+/* Main inspector layout grids */
+.bpe-inspector-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.95fr);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.bpe-secondary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.15fr);
+  background: var(--panel);
+}
+
+.bpe-card-clean {
+  padding: 20px 24px;
+  min-width: 0;
+}
+
+.bpe-border-left {
+  border-left: 1px solid var(--line);
+}
+
+.bpe-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.bpe-card-header h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+/* Corpus sequences display */
+.bpe-corpus {
+  display: grid;
+  gap: 8px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+
+.bpe-seq {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.bpe-idx {
+  text-align: right;
+  font-size: 0.7rem;
+  color: var(--dl-muted);
+  font-family: Consolas, monospace;
+}
+
+.bpe-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.bpe-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  min-width: 30px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fcfdfa;
+  font: 600 0.8rem Consolas, "SFMono-Regular", monospace;
+  color: var(--ink);
+}
+
+.bpe-token.learned {
+  border-color: var(--green);
+  background: var(--green-soft);
+  color: #174f49;
+}
+
+.bpe-sep {
+  font-size: 0.72rem;
+  color: #a0b2aa;
+  user-select: none;
+}
+
+.bpe-empty {
+  padding: 24px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  color: var(--dl-muted);
+  font-size: 0.82rem;
+  text-align: center;
+  background: #fafbf8;
+}
+
+/* Decision box */
+.bpe-decision-box {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.bpe-decision-box .dl-value-detail {
+  margin: 0;
+}
+
+/* Candidate pairs leaderboard */
+.bpe-pairs-list {
+  display: grid;
+  gap: 6px;
+  max-height: 440px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.bpe-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: var(--soft);
+}
+
+.bpe-pair.best {
+  border-color: var(--green);
+  background: #edf5ef;
+}
+
+.bpe-badge {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: Consolas, monospace;
+}
+
+.bpe-bar {
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: #d8ded8;
+  overflow: hidden;
+}
+
+.bpe-fill {
+  height: 100%;
+  background: var(--green);
+}
+
+/* Vocabulary & Rules */
+.bpe-vocab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 2px 0;
+}
+
+.bpe-rules-header {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.bpe-rules-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.bpe-rules {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.bpe-rule {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 7px 10px;
+  background: #fcfdfa;
+}
+
+.bpe-rule-num {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: Consolas, monospace;
+  font-weight: 600;
+}
+
+/* Tokenizer playground form and results */
+.bpe-playground-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 12px;
+}
+
+.bpe-playground-form textarea {
+  width: 100%;
+  min-height: 60px;
+}
+
+.bpe-playground-form select {
+  width: 100%;
+  min-height: 38px;
+}
+
+.bpe-result-tokens {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.bpe-trace-details {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.bpe-trace-details summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--green);
+}
+
+.bpe-trace {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.bpe-trace-item {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 8px 12px;
+}
+
+.bpe-trace-item .bpe-meta {
+  font-size: 0.7rem;
+  color: var(--dl-muted);
+  margin-bottom: 4px;
+  font-family: Consolas, monospace;
+}
+
+.bpe-hint {
+  font-size: 0.75rem;
+  color: var(--dl-muted);
+  line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .bpe-inspector-grid,
+  .bpe-secondary-grid {
+    grid-template-columns: 1fr;
+  }
+  .bpe-border-left {
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 640px) {
+  .bpe-playground-form {
+    grid-template-columns: 1fr;
+  }
+}

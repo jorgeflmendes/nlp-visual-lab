@@ -1,6 +1,6 @@
 import type { DeepLearningTopic } from "./data/topics.ts";
-import type { RealModelKind } from "./realModels.ts";
 import { bindExecutionWorkspace } from "./executionWorkspace.ts";
+import { bpePage, bindBpe } from "./bpeLab.ts";
 import "./deepLearning.css";
 
 type TypesetMath = (root: ParentNode) => Promise<void>;
@@ -20,7 +20,16 @@ interface PageCopy {
   stages: string[];
 }
 
-const copy: Record<RealModelKind, PageCopy> = {
+const copy: Record<DeepLearningTopic["kind"], PageCopy> = {
+  bpe: {
+    label: "BPE", task: "Train subwords. Inspect every merge.",
+    description: "Follow how Byte Pair Encoding iteratively aggregates the most frequent adjacent character and subword pairs into a learned vocabulary.",
+    inputLabel: "Training corpus", inputValue: "low lower lowest new newer newest wide wider widest",
+    inputHint: "Define sequences, vocabulary limits and stopping criteria.",
+    presets: [["Vocabulary expansion", "low lower lowest new newer newest wide wider widest"], ["Small alphabet", "abc, abc, abc, abd"]],
+    model: "Byte Pair Encoding", source: "Subword Tokenization", sourceUrl: "https://en.wikipedia.org/wiki/Byte_pair_encoding",
+    inspect: "Pair leaderboard, merge decisions, evolving vocabulary and inference trace.", stages: ["Corpus", "Pairs", "Merges", "Tokenizer"],
+  },
   lstm: {
     label: "LSTM", task: "Read a review. Follow its memory.",
     description: "Trace how a trained recurrent network turns a sequence of words into a sentiment prediction.",
@@ -60,7 +69,13 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character] ?? character);
 }
 
-const routes: [RealModelKind, string][] = [["lstm", "lstm"], ["seq2seq", "seq2seq"], ["attention", "attention"], ["transformer", "transformers"]];
+const routes: [DeepLearningTopic["kind"], string][] = [
+  ["bpe", "bpe"],
+  ["lstm", "lstm"],
+  ["seq2seq", "seq2seq"],
+  ["attention", "attention"],
+  ["transformer", "transformers"],
+];
 
 export function deepLearningCategory(topics: DeepLearningTopic[]): string {
   return `<section class="dl-category"><header><p class="dl-eyebrow">Deep learning / model laboratory</p><h1>Follow the computation.</h1><p>Run a trained neural network in your browser. Move through its forward pass and inspect the values behind its prediction.</p></header><div class="dl-catalog" aria-label="Deep learning experiments">${topics.map((topic, index) => {
@@ -70,6 +85,9 @@ export function deepLearningCategory(topics: DeepLearningTopic[]): string {
 }
 
 export function deepLearningPage(topic: DeepLearningTopic): string {
+  if (topic.kind === "bpe") {
+    return bpePage(topic);
+  }
   const page = copy[topic.kind];
   return `<article class="dl-workspace" data-kind="${topic.kind}">
     <nav class="dl-model-nav" aria-label="Deep learning experiments"><a class="dl-back" href="#/deep-learning" aria-label="All deep learning experiments">← <span>Laboratory</span></a><div>${routes.map(([kind, slug]) => `<a href="#/${slug}" ${kind === topic.kind ? 'aria-current="page"' : ""}>${copy[kind].label}</a>`).join("")}</div></nav>
@@ -85,5 +103,9 @@ export function deepLearningPage(topic: DeepLearningTopic): string {
 }
 
 export function bindDeepLearning(topic: DeepLearningTopic, typesetMath: TypesetMath): void {
+  if (topic.kind === "bpe") {
+    bindBpe();
+    return;
+  }
   bindExecutionWorkspace(topic.kind, typesetMath);
 }

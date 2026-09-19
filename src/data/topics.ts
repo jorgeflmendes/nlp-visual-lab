@@ -28,10 +28,11 @@ export const topics: Topic[] = [
 ];
 
 export interface DeepLearningTopic extends Topic {
-  kind: "lstm" | "seq2seq" | "attention" | "transformer";
+  kind: "bpe" | "lstm" | "seq2seq" | "attention" | "transformer";
 }
 
 export const deepLearningTopics: DeepLearningTopic[] = [
+  { slug: "bpe", kind: "bpe", title: "Byte Pair Encoding", summary: "Train subword tokenization on an arbitrary corpus and inspect every merge decision." },
   { slug: "lstm", kind: "lstm", title: "Long short-term memory", summary: "Classify arbitrary English reviews with a trained IMDB LSTM." },
   { slug: "seq2seq", kind: "seq2seq", title: "Sequence-to-sequence models", summary: "Translate short English inputs using a trained LSTM encoder-decoder." },
   { slug: "attention", kind: "attention", title: "Attention mechanisms", summary: "Normalise a date and inspect the trained model's attention matrix." },
