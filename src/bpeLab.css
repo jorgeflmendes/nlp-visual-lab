@@ -65,6 +65,22 @@
   height: 15px;
 }
 
+/* Config details accordion */
+.bpe-config-details {
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--soft);
+  padding: 10px 14px;
+}
+
+.bpe-config-details summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--accent);
+}
+
 .bpe-file-input {
   position: absolute;
   width: 1px;
