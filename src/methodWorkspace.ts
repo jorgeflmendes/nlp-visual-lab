@@ -1,4 +1,5 @@
 import type { Topic } from "./data/topics.ts";
+import { getTopicIcon } from "./data/icons.ts";
 
 export interface MethodStep { title: string; stage: string; }
 export interface MethodTrace {
@@ -29,10 +30,16 @@ export function methodPage(topic: Topic, options: {
   title: string; description: string; inputs: string; notes: string;
   examples?: Array<{ label: string; values: Record<string, string> }>;
 }): string {
-  const links = [["edit-distance", "Edit distance"], ["n-grams", "Bigrams"], ["viterbi", "Viterbi"], ["cky", "CKY"], ["tfidf", "TF-IDF"]];
+  const isFoundations = topic.slug === "edit-distance" || topic.slug === "tfidf";
+  const parentCategorySlug = isFoundations ? "foundations" : "structured";
+  const parentCategoryLabel = isFoundations ? "Foundations" : "Structured NLP";
+  const links = isFoundations
+    ? [["bpe", "BPE"], ["edit-distance", "Edit distance"], ["tfidf", "TF-IDF"]]
+    : [["n-grams", "Bigrams"], ["viterbi", "Viterbi"], ["cky", "CKY"]];
+
   return `<article id="method-workspace" class="ml-workspace dl-workspace">
-    <nav class="dl-model-nav" aria-label="Solvers"><a class="dl-back" href="#/solvers" aria-label="All solvers">← <span>Solvers</span></a><div>${links.map(([slug, label]) => `<a href="#/${slug}" ${topic.slug === slug ? 'aria-current="page"' : ""}>${label}</a>`).join("")}</div></nav>
-    <header class="dl-page-heading"><div><p class="dl-eyebrow">Solvers / interactive lab</p><h1>${escapeHtml(options.title)}</h1><p>${escapeHtml(options.description)}</p></div><span class="dl-state" id="method-state">Ready to calculate</span></header>
+    <nav class="dl-model-nav" aria-label="${escapeHtml(parentCategoryLabel)}"><a class="dl-back" href="#/${parentCategorySlug}" aria-label="All ${escapeHtml(parentCategoryLabel.toLowerCase())} laboratories">← <span>${parentCategoryLabel}</span></a><div>${links.map(([slug, label]) => `<a href="#/${slug}" ${topic.slug === slug ? 'aria-current="page"' : ""}>${label}</a>`).join("")}</div></nav>
+    <header class="dl-page-heading"><div><p class="dl-eyebrow">${escapeHtml(parentCategoryLabel)} / interactive lab</p><div class="dl-heading-title-row">${getTopicIcon(topic.slug, "dl-heading-icon")}<h1>${escapeHtml(options.title)}</h1></div><p>${escapeHtml(options.description)}</p></div><span class="dl-state" id="method-state">Ready to calculate</span></header>
     <section class="dl-experiment" aria-label="Experiment">
       <div class="dl-input-panel"><div class="dl-section-label"><span>Input</span><span>Editable experiment</span></div><div id="method-inputs">${options.inputs}</div>
       ${options.examples?.length ? `<div class="dl-presets"><span>Try</span>${options.examples.map((example) => `<button type="button" data-preset="${escapeHtml(JSON.stringify(example.values))}">${escapeHtml(example.label)}</button>`).join("")}</div>` : ""}

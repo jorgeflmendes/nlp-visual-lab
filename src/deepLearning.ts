@@ -1,4 +1,5 @@
 import type { DeepLearningTopic } from "./data/topics.ts";
+import { getTopicIcon } from "./data/icons.ts";
 import { bindExecutionWorkspace } from "./executionWorkspace.ts";
 import { bpePage, bindBpe } from "./bpeLab.ts";
 import "./deepLearning.css";
@@ -70,7 +71,6 @@ function escapeHtml(value: string): string {
 }
 
 const routes: [DeepLearningTopic["kind"], string][] = [
-  ["bpe", "bpe"],
   ["lstm", "lstm"],
   ["seq2seq", "seq2seq"],
   ["attention", "attention"],
@@ -78,7 +78,7 @@ const routes: [DeepLearningTopic["kind"], string][] = [
 ];
 
 export function deepLearningCategory(topics: DeepLearningTopic[]): string {
-  return `<section class="dl-category"><header><p class="dl-eyebrow">Deep learning / model laboratory</p><h1>Follow the computation.</h1><p>Run a trained neural network in your browser. Move through its forward pass and inspect the values behind its prediction.</p></header><div class="dl-catalog" aria-label="Deep learning experiments">${topics.map((topic, index) => {
+  return `<section class="dl-category"><header><p class="dl-eyebrow">Neural / architecture laboratory</p><h1>Follow the computation.</h1><p>Run a trained neural network in your browser. Move through its forward pass and inspect the values behind its prediction.</p></header><div class="dl-catalog" aria-label="Neural architecture experiments">${topics.map((topic, index) => {
     const page = copy[topic.kind];
     return `<a href="#/${topic.slug}"><span class="dl-catalog-index">0${index + 1}</span><div class="dl-catalog-title"><h2>${page.label}</h2><p>${page.task}</p></div><div class="dl-catalog-flow" aria-hidden="true">${page.stages.map(stage => `<span>${stage}</span>`).join('<b>→</b>')}</div><span class="dl-catalog-arrow" aria-hidden="true">↗</span></a>`;
   }).join("")}</div><p class="dl-catalog-note">Published weights. Local inference. Every displayed activation comes from your run.</p></section>`;
@@ -90,8 +90,8 @@ export function deepLearningPage(topic: DeepLearningTopic): string {
   }
   const page = copy[topic.kind];
   return `<article class="dl-workspace" data-kind="${topic.kind}">
-    <nav class="dl-model-nav" aria-label="Deep learning experiments"><a class="dl-back" href="#/deep-learning" aria-label="All deep learning experiments">← <span>Laboratory</span></a><div>${routes.map(([kind, slug]) => `<a href="#/${slug}" ${kind === topic.kind ? 'aria-current="page"' : ""}>${copy[kind].label}</a>`).join("")}</div></nav>
-    <header class="dl-page-heading"><div><p class="dl-eyebrow">${page.label} / ${page.model}</p><h1>${page.task}</h1><p>${page.description}</p></div><span id="model-state" class="dl-state">Not loaded</span></header>
+    <nav class="dl-model-nav" aria-label="Neural architecture experiments"><a class="dl-back" href="#/neural" aria-label="All neural architecture experiments">← <span>Neural Architectures</span></a><div>${routes.map(([kind, slug]) => `<a href="#/${slug}" ${kind === topic.kind ? 'aria-current="page"' : ""}>${copy[kind].label}</a>`).join("")}</div></nav>
+    <header class="dl-page-heading"><div><p class="dl-eyebrow">${page.label} / ${page.model}</p><div class="dl-heading-title-row">${getTopicIcon(topic.slug, "dl-heading-icon")}<h1>${page.task}</h1></div><p>${page.description}</p></div><span id="model-state" class="dl-state">Not loaded</span></header>
     <section class="dl-experiment" aria-label="Model input and output">
       <div class="dl-input-panel"><div class="dl-section-label"><label for="neural-input">${page.inputLabel}</label><span>01 / Input</span></div><textarea id="neural-input" rows="2" aria-describedby="neural-input-hint" spellcheck="false">${escapeHtml(page.inputValue)}</textarea><div class="dl-presets" aria-label="Example inputs"><span>Try</span>${page.presets.map(([label, value]) => `<button type="button" data-preset="${escapeHtml(value)}">${escapeHtml(label)}</button>`).join("")}</div><p id="neural-input-hint" class="dl-input-hint">${page.inputHint}</p><div class="dl-run-controls"><button id="run-real-model" class="dl-primary" type="button">Load & run <span aria-hidden="true">→</span></button><button id="load-real-model" type="button">Load only</button><button id="reset-real-model" type="button">Reset</button></div></div>
       <div class="dl-output-panel"><div class="dl-section-label"><span>Model output</span><span>02 / Prediction</span></div><div id="neural-output" aria-live="polite"><p class="dl-output-empty">Your prediction appears here.</p><p class="dl-note">Run the model with an input to compute a result.</p></div><div class="dl-model-meta"><a href="${page.sourceUrl}" target="_blank" rel="noreferrer">${page.source} model source ↗</a><span>Published trained weights</span><span id="model-runtime">Inference runs in your browser.</span></div></div>

@@ -1,4 +1,5 @@
 import type { Topic } from "./data/topics.ts";
+import { getTopicIcon } from "./data/icons.ts";
 import { typesetMath } from "./main.ts";
 import {
   type DocumentInput,
@@ -25,24 +26,25 @@ const defaultDocs: DocumentInput[] = [
   { name: "D3", text: "neural search combines language models with vector retrieval for document ranking" },
 ];
 
-const solverRoutes: [string, string][] = [
+const foundationsRoutes: [string, string][] = [
+  ["bpe", "BPE"],
   ["edit-distance", "Edit distance"],
-  ["n-grams", "Bigrams"],
-  ["viterbi", "Viterbi"],
-  ["cky", "CKY"],
   ["tfidf", "TF-IDF"],
 ];
 
 export function tfidfPage(topic: Topic): string {
   return `<article class="tfidf-workspace dl-workspace" data-kind="tfidf">
-    <nav class="dl-model-nav" aria-label="Solvers">
-      <a class="dl-back" href="#/solvers" aria-label="All solvers">← <span>Solvers</span></a>
-      <div>${solverRoutes.map(([slug, label]) => `<a href="#/${slug}" ${topic.slug === slug ? 'aria-current="page"' : ""}>${label}</a>`).join("")}</div>
+    <nav class="dl-model-nav" aria-label="Foundations laboratories">
+      <a class="dl-back" href="#/foundations" aria-label="All foundations laboratories">← <span>Foundations</span></a>
+      <div>${foundationsRoutes.map(([slug, label]) => `<a href="#/${slug}" ${topic.slug === slug ? 'aria-current="page"' : ""}>${label}</a>`).join("")}</div>
     </nav>
     <header class="dl-page-heading">
       <div>
-        <p class="dl-eyebrow">Solvers / Vector space laboratory</p>
-        <h1>Build TF-IDF from first principles.</h1>
+        <p class="dl-eyebrow">Foundations / Vector space laboratory</p>
+        <div class="dl-heading-title-row">
+          ${getTopicIcon(topic.slug, "dl-heading-icon")}
+          <h1>Build TF-IDF from first principles.</h1>
+        </div>
         <p>Inspect counts, TF, DF, IDF and TF-IDF values, then use the resulting vectors for cosine similarity and query retrieval.</p>
       </div>
       <span id="tfidf-status" class="dl-state">Not computed</span>

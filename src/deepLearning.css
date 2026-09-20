@@ -96,6 +96,27 @@
   padding: 28px 0 24px;
 }
 
+.dl-heading-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0 8px;
+}
+
+.dl-heading-title-row h1 {
+  margin: 0;
+}
+
+.dl-heading-icon {
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
 .dl-eyebrow {
   margin: 0 0 8px;
   color: var(--accent);

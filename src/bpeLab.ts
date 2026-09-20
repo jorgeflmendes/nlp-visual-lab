@@ -1,4 +1,5 @@
 import type { DeepLearningTopic } from "./data/topics.ts";
+import { getTopicIcon } from "./data/icons.ts";
 import {
   type BpeModel,
   type BpeOptions,
@@ -21,30 +22,29 @@ function visibleChar(s: string): string {
 
 const routes: [string, string][] = [
   ["bpe", "bpe"],
-  ["lstm", "lstm"],
-  ["seq2seq", "seq2seq"],
-  ["attention", "attention"],
-  ["transformers", "transformers"],
+  ["edit-distance", "edit-distance"],
+  ["tfidf", "tfidf"],
 ];
 
 const labels: Record<string, string> = {
   bpe: "BPE",
-  lstm: "LSTM",
-  seq2seq: "Seq2Seq",
-  attention: "Attention",
-  transformers: "Transformer",
+  "edit-distance": "Edit distance",
+  tfidf: "TF-IDF",
 };
 
 export function bpePage(topic: DeepLearningTopic): string {
   return `<article class="bpe-workspace dl-workspace" data-kind="bpe">
-    <nav class="dl-model-nav" aria-label="Deep learning experiments">
-      <a class="dl-back" href="#/deep-learning" aria-label="All deep learning experiments">← <span>Laboratory</span></a>
+    <nav class="dl-model-nav" aria-label="Foundations laboratories">
+      <a class="dl-back" href="#/foundations" aria-label="All foundations laboratories">← <span>Foundations</span></a>
       <div>${routes.map(([kind, slug]) => `<a href="#/${slug}" ${kind === topic.slug ? 'aria-current="page"' : ""}>${labels[kind] ?? kind}</a>`).join("")}</div>
     </nav>
     <header class="dl-page-heading">
       <div>
         <p class="dl-eyebrow">BPE / Tokenizer Laboratory</p>
-        <h1>Train subwords. Inspect every merge.</h1>
+        <div class="dl-heading-title-row">
+          ${getTopicIcon("bpe", "dl-heading-icon")}
+          <h1>Train subwords. Inspect every merge.</h1>
+        </div>
         <p>Follow how Byte Pair Encoding iteratively aggregates the most frequent adjacent character and subword pairs into a learned vocabulary.</p>
       </div>
       <span id="bpe-status" class="dl-state">Not trained</span>

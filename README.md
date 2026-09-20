@@ -24,8 +24,9 @@
 </p>
 
 <p align="center">
-  <a href="#solvers">Solvers</a> ·
-  <a href="#deep-learning">Deep learning</a> ·
+  <a href="#foundations--representations">Foundations</a> ·
+  <a href="#structured--classical-nlp">Structured NLP</a> ·
+  <a href="#neural-architectures">Neural architectures</a> ·
   <a href="#technology">Technology</a> ·
   <a href="#getting-started">Getting started</a> ·
   <a href="#deployment">Deployment</a>
@@ -33,25 +34,32 @@
 
 ## Overview
 
-NLP Visual Lab turns the intermediate calculations behind common natural language processing methods into explorable tables, diagrams and controls. Classical solvers run locally in the browser. Neural experiments download their model files on first use and then perform inference in the browser.
+NLP Visual Lab turns the intermediate calculations behind common natural language processing methods into explorable tables, diagrams and controls. Foundations and structured NLP algorithms run deterministically in the browser. Neural experiments download their model files on first use and then perform inference in the browser.
 
-### Solvers
+### Foundations & Representations
 
 | Method | What the page shows |
 | --- | --- |
-| Minimum edit distance | Dynamic-programming matrix, operation costs and an optimal edit sequence |
+| Byte Pair Encoding | Pair leaderboard, merge decisions, evolving vocabulary and subword tokenization trace |
+| Minimum edit distance | Dynamic-programming matrix, operation costs and optimal edit sequence (WebAssembly core) |
+| TF-IDF Vector Space | Term frequencies, inverse document frequencies, vector weights and cosine similarity ranking |
+
+### Structured & Classical NLP
+
+| Method | What the page shows |
+| --- | --- |
 | Bigram language model | Token counts, conditional probabilities and the complete sentence probability product |
 | Viterbi HMM | Editable model probabilities, score and backpointer tables, trellis and decoded path |
-| CKY parser | Grammar rules, chart construction and recovered parse trees |
+| CKY parser | Grammar rules in Chomsky Normal Form, pyramidal chart construction and recovered parse trees |
 
-### Deep learning
+### Neural Architectures
 
 | Model | Experiment |
 | --- | --- |
-| LSTM | Sentiment classification with token-level input inspection |
-| Sequence-to-sequence | Character-level English-to-French translation |
-| Attention | Date normalization with an attention heatmap |
-| DistilGPT2 | Autoregressive text continuation with generation controls |
+| LSTM | Sentiment classification with token-level input inspection and gated recurrent memory |
+| Sequence-to-sequence | Character-level English-to-French translation with encoder and decoder states |
+| Attention | Date normalization with an attention matrix and dynamic context vectors |
+| DistilGPT2 | Autoregressive text continuation with vocabulary logits and generation controls |
 
 ## Technology
 
