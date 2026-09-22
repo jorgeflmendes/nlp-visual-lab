@@ -4,11 +4,11 @@ export interface Topic {
   summary: string;
   tag?: string;
   stages?: string[];
-  kind?: "bpe" | "lstm" | "seq2seq" | "attention" | "transformer";
+  kind?: "bpe" | "lstm" | "seq2seq" | "attention" | "sentence-embeddings" | "transformer";
 }
 
 export interface DeepLearningTopic extends Topic {
-  kind: "bpe" | "lstm" | "seq2seq" | "attention" | "transformer";
+  kind: "bpe" | "lstm" | "seq2seq" | "attention" | "sentence-embeddings" | "transformer";
 }
 
 export const foundationsTopics: (Topic | DeepLearningTopic)[] = [
@@ -33,6 +33,13 @@ export const foundationsTopics: (Topic | DeepLearningTopic)[] = [
     summary: "Build term-document representations from first principles, evaluate cosine similarities and query retrieval.",
     tag: "Vector Space & Cosine",
     stages: ["Counts", "TF", "DF / IDF", "Vectors"],
+  },
+  {
+    slug: "word-embeddings",
+    title: "Word Embeddings",
+    summary: "Explore 100-dimensional GloVe representations over a 20,000-word vocabulary.",
+    tag: "GloVe & Vector Algebra",
+    stages: ["Vectors", "Cosine", "Analogy", "PCA"],
   },
 ];
 
@@ -84,6 +91,14 @@ export const neuralTopics: DeepLearningTopic[] = [
     summary: "Normalise a date and inspect the trained model's attention matrix.",
     tag: "Alignment Matrix",
     stages: ["Characters", "Encoder", "Attention", "ISO date"],
+  },
+  {
+    slug: "sentence-embeddings",
+    kind: "sentence-embeddings",
+    title: "Sentence Embeddings",
+    summary: "Extract 384-dimensional dense semantic vectors with all-MiniLM-L6-v2 and trace mean pooling.",
+    tag: "MiniLM & Mean Pooling",
+    stages: ["Tokens", "Hidden states", "Mean pooling", "Normalized vector"],
   },
   {
     slug: "transformers",

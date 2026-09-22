@@ -189,6 +189,15 @@ async function render(): Promise<void> {
   // Neural topics
   const neuralTopic = neuralTopics.find((candidate) => candidate.slug === current);
   if (neuralTopic) {
+    if (neuralTopic.kind === "sentence-embeddings") {
+      const { sentenceEmbeddingsPage, bindSentenceEmbeddings } = await import("./sentenceEmbeddingsLab.ts");
+      if (route() !== current) return;
+      layout(current, sentenceEmbeddingsPage(neuralTopic));
+      bindSentenceEmbeddings(neuralTopic, typesetMath);
+      void typesetMath();
+      window.scrollTo(0, 0);
+      return;
+    }
     const { deepLearningPage, bindDeepLearning } = await import("./deepLearning.ts");
     if (route() !== current) return;
     layout(current, deepLearningPage(neuralTopic));
@@ -205,6 +214,24 @@ async function render(): Promise<void> {
     if (route() !== current) return;
     layout(current, deepLearningPage(bpeTopic));
     bindDeepLearning(bpeTopic, typesetMath);
+    void typesetMath();
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  // Word Embeddings (Foundations vector algebra lab)
+  if (current === "word-embeddings") {
+    const { wordEmbeddingsPage, bindWordEmbeddings } = await import("./wordEmbeddingsLab.ts");
+    if (route() !== current) return;
+    const topic = foundationsTopics.find((candidate) => candidate.slug === "word-embeddings") ?? {
+      slug: "word-embeddings",
+      title: "Word Embeddings",
+      summary: "Explore 100-dimensional GloVe representations over a 20,000-word vocabulary.",
+      tag: "GloVe & Vector Algebra",
+      stages: ["Vectors", "Cosine", "Analogy", "PCA"],
+    };
+    layout(current, wordEmbeddingsPage(topic));
+    void bindWordEmbeddings();
     void typesetMath();
     window.scrollTo(0, 0);
     return;

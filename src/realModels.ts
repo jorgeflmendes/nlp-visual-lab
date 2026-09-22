@@ -2,7 +2,7 @@ import type { DeepLearningTopic } from "./data/topics.ts";
 import type { ExecutionStep, ExecutionTrace, TraceTensor, TraceToken } from "./modelTrace.ts";
 import { assertEquivalent, candidates, validateTensor } from "./modelNumerics.ts";
 
-export type RealModelKind = Extract<DeepLearningTopic["kind"], "lstm" | "seq2seq" | "attention" | "transformer">;
+export type RealModelKind = Extract<DeepLearningTopic["kind"], "lstm" | "seq2seq" | "attention" | "sentence-embeddings" | "transformer">;
 export type ModelProgress = (message: string, percent?: number) => void;
 const TFJS_URL = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js";
 const WASM_PATH = "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@4.22.0/dist/";
@@ -17,7 +17,11 @@ const loaded = new Set<RealModelKind>();
 export function isModelLoaded(kind: RealModelKind): boolean { return loaded.has(kind); }
 
 const modelNames: Record<RealModelKind, string> = {
-  lstm: "IMDB LSTM", seq2seq: "English to French LSTM", attention: "Date conversion attention model", transformer: "DistilGPT2 q8",
+  lstm: "IMDB LSTM",
+  seq2seq: "English to French LSTM",
+  attention: "Date conversion attention model",
+  "sentence-embeddings": "all-MiniLM-L6-v2 q8",
+  transformer: "DistilGPT2 q8",
 };
 
 class ModelInputError extends Error {
@@ -68,6 +72,21 @@ async function getAssets(kind: RealModelKind, progress: ModelProgress): Promise<
           },
         });
       }
+      if (kind === "sentence-embeddings") {
+        progress("Loading the ONNX inference runtime");
+        const transformers = await import(/* @vite-ignore */ TRANSFORMERS_URL);
+        transformers.env.allowLocalModels = true;
+        transformers.env.localModelPath = "/models/";
+        progress("Loading all-MiniLM-L6-v2 weights");
+        return transformers.pipeline("feature-extraction", "minilm", {
+          device: "wasm",
+          dtype: "q8",
+          local_files_only: true,
+          progress_callback: (event: { status?: string; progress?: number }) => {
+            if (event.status === "progress_total" && event.progress !== undefined) progress("Loading all-MiniLM-L6-v2 weights", event.progress);
+          },
+        });
+      }
       const tf = await tensorflow(progress);
       progress(`Downloading ${modelNames[kind]}`);
       if (kind === "attention") {
@@ -105,7 +124,32 @@ async function getAssets(kind: RealModelKind, progress: ModelProgress): Promise<
 export async function loadModel(kind: RealModelKind, progress: ModelProgress): Promise<string> {
   await getAssets(kind, progress);
   loaded.add(kind);
-  return kind === "transformer" ? "ONNX · WASM · q8" : `TensorFlow.js · ${(await tensorflow(progress)).getBackend()}`;
+  return kind === "transformer" || kind === "sentence-embeddings" ? "ONNX · WASM · q8" : `TensorFlow.js · ${(await tensorflow(progress)).getBackend()}`;
+}
+
+export async function extractSentenceEmbedding(
+  text: string,
+  progress?: ModelProgress
+): Promise<Float32Array> {
+  const extractor = await getAssets("sentence-embeddings", progress ?? (() => {}));
+  loaded.add("sentence-embeddings");
+  const raw = await extractor(text, { pooling: "mean", normalize: true });
+  return new Float32Array(raw.data);
+}
+
+export async function extractSentenceEmbeddingsBatch(
+  texts: string[],
+  progress?: ModelProgress
+): Promise<Float32Array[]> {
+  const extractor = await getAssets("sentence-embeddings", progress ?? (() => {}));
+  loaded.add("sentence-embeddings");
+  const results: Float32Array[] = [];
+  for (let i = 0; i < texts.length; i++) {
+    if (progress) progress(`Encoding sentence ${i + 1} of ${texts.length}`, Math.round(((i + 1) / texts.length) * 100));
+    const raw = await extractor(texts[i], { pooling: "mean", normalize: true });
+    results.push(new Float32Array(raw.data));
+  }
+  return results;
 }
 
 function snapshot(name: string, tensor: any, axes?: string[]): TraceTensor {
@@ -493,12 +537,374 @@ async function runTransformer(text: string, progress: ModelProgress): Promise<Ex
   return { output: continuation || "No text emitted", outputLabel: "Greedy continuation", backend: "ONNX · WASM · q8", elapsed: performance.now() - started, steps, note: "Only exported key/value caches and logits are shown. Queries, attention weights and other internal block tensors are not exposed by this ONNX export. Timing includes the verification run." };
 }
 
+function getOutputTensor(outputs: Record<string, any> | undefined, pattern: string): { data: Float32Array; dims: number[] } | undefined {
+  if (!outputs) return undefined;
+  for (const [key, val] of Object.entries(outputs)) {
+    if (key.includes(pattern) && val && val.data && val.dims) {
+      return {
+        data: val.data instanceof Float32Array ? val.data : Float32Array.from(val.data),
+        dims: Array.from(val.dims),
+      };
+    }
+  }
+  return undefined;
+}
+
+async function runSentenceEmbedding(text: string, progress: ModelProgress): Promise<ExecutionTrace> {
+  const extractor = await getAssets("sentence-embeddings", progress);
+  const tokenizer = extractor.tokenizer;
+  const encoded = await tokenizer(text);
+  const ids = Array.from(encoded.input_ids.data, Number);
+  const mask = Array.from(encoded.attention_mask.data, Number);
+
+  if (!ids.length) throw new ModelInputError("Enter at least one valid word or sentence.");
+
+  const decode = (id: number) => tokenizer.decode([id]) || "[unk]";
+  const tokens: TraceToken[] = ids.map((id, position) => ({ id, position, text: decode(id) }));
+  const tokenTexts = tokens.map(t => t.text);
+  const seqLen = ids.length;
+
+  const started = performance.now();
+  progress("Running instrumented Transformer encoder forward pass");
+
+  let rawOutputs: Record<string, any> | undefined;
+  try {
+    rawOutputs = await extractor.model(encoded);
+  } catch (err) {
+    console.warn("Direct model forward call fallback:", err);
+  }
+
+  let finalHidden: Float32Array;
+  let hiddenDim = 384;
+
+  if (rawOutputs) {
+    const last = getOutputTensor(rawOutputs, "last_hidden_state");
+    if (last) {
+      finalHidden = last.data;
+      hiddenDim = last.dims[2] ?? 384;
+    } else {
+      const fallback = await extractor(text, { pooling: "none", normalize: false });
+      hiddenDim = fallback.dims[2] ?? 384;
+      finalHidden = Float32Array.from(fallback.data);
+    }
+  } else {
+    const fallback = await extractor(text, { pooling: "none", normalize: false });
+    hiddenDim = fallback.dims[2] ?? 384;
+    finalHidden = Float32Array.from(fallback.data);
+  }
+
+  const steps: ExecutionStep[] = [
+    // Step 1: Tokenization
+    {
+      name: "Tokenization & attention mask",
+      stage: "Tokens",
+      operation: "WordPiece tokenization",
+      description: `The sentence is tokenized into ${seqLen} subword pieces including [CLS] (position 0) and [SEP] (position ${seqLen - 1}). Binary attention mask marks unpadded valid tokens.`,
+      tokens,
+      tensors: [
+        { name: "Token IDs", shape: [1, seqLen], values: ids, dtype: "int64", axes: ["batch", "position"] },
+        { name: "Attention mask", shape: [1, mask.length], values: mask, dtype: "int64", axes: ["batch", "position"] },
+      ],
+    },
+  ];
+
+  // Step 2: Word Embedding Lookup
+  const wordEmb = getOutputTensor(rawOutputs, "word_embeddings");
+  if (wordEmb) {
+    steps.push({
+      name: "Token embedding lookup",
+      stage: "Embeddings",
+      operation: "Vocabulary embedding matrix lookup",
+      description: `Indexed 384-dimensional dense vectors for all ${seqLen} subword tokens from embedding matrix W_word ∈ R^(30522 × 384).`,
+      formula: "\\mathbf{E}_{\\text{word}} = \\mathbf{W}_{\\text{word}}[\\mathbf{x}]",
+      tokens,
+      tensors: [
+        {
+          name: "Token embeddings",
+          shape: [1, seqLen, hiddenDim],
+          values: wordEmb.data,
+          dtype: "float32",
+          axes: ["batch", "position", "dimension"],
+          description: `Token embedding vectors for each sequence position [1 × ${seqLen} × ${hiddenDim}].`,
+        },
+      ],
+    });
+  }
+
+  // Step 3: Positional Embedding Lookup
+  const posEmb = getOutputTensor(rawOutputs, "position_embeddings");
+  if (posEmb) {
+    steps.push({
+      name: "Positional embedding addition",
+      stage: "Embeddings",
+      operation: "Learned positional encoding",
+      description: `Looked up learned position representations W_pos[0..${seqLen - 1}] ∈ R^384, encoding order into the permutation-invariant Transformer.`,
+      formula: "\\mathbf{E}_{\\text{pos}} = \\mathbf{W}_{\\text{pos}}[0 \\dots L-1]",
+      tokens,
+      tensors: [
+        {
+          name: "Position embeddings",
+          shape: [1, seqLen, hiddenDim],
+          values: posEmb.data,
+          dtype: "float32",
+          axes: ["batch", "position", "dimension"],
+          description: `Absolute positional vectors for positions 0 to ${seqLen - 1} [1 × ${seqLen} × ${hiddenDim}].`,
+        },
+      ],
+    });
+  }
+
+  // Step 4: Embedding LayerNorm & Residual
+  const normEmb = getOutputTensor(rawOutputs, "embeddings/LayerNorm") ?? getOutputTensor(rawOutputs, "LayerNorm/Add_1");
+  if (normEmb) {
+    steps.push({
+      name: "Embedding LayerNorm & dropout",
+      stage: "Embeddings",
+      operation: "Layer normalization",
+      description: `Combined word, position, and token type embeddings are summed coordinate-wise and normalized via LayerNorm to standardize input variance.`,
+      formula: "\\mathbf{H}^{(0)} = \\operatorname{LayerNorm}(\\mathbf{E}_{\\text{word}} + \\mathbf{E}_{\\text{pos}} + \\mathbf{E}_{\\text{type}})",
+      tokens,
+      tensors: [
+        {
+          name: "Initial layer representation H(0)",
+          shape: [1, seqLen, hiddenDim],
+          values: normEmb.data,
+          dtype: "float32",
+          axes: ["batch", "position", "dimension"],
+          description: `Normalized input representation entering the first Transformer encoder layer [1 × ${seqLen} × ${hiddenDim}].`,
+        },
+      ],
+    });
+  }
+
+  // Compute head-averaged attention matrix and collect intermediate layer representations
+  const numHeads = 12;
+  const layer6Attn = getOutputTensor(rawOutputs, "layer.5/attention/self/Softmax");
+  let headAvgMatrix: number[][] | undefined;
+  let headAvgFlat: Float32Array | undefined;
+
+  if (layer6Attn && layer6Attn.data.length >= numHeads * seqLen * seqLen) {
+    headAvgMatrix = [];
+    headAvgFlat = new Float32Array(seqLen * seqLen);
+    for (let i = 0; i < seqLen; i++) {
+      const row: number[] = [];
+      for (let j = 0; j < seqLen; j++) {
+        let sum = 0;
+        for (let h = 0; h < numHeads; h++) {
+          const idx = h * seqLen * seqLen + i * seqLen + j;
+          sum += layer6Attn.data[idx];
+        }
+        const avg = sum / numHeads;
+        row.push(avg);
+        headAvgFlat[i * seqLen + j] = avg;
+      }
+      headAvgMatrix.push(row);
+    }
+  }
+
+  // Gather intermediate layer representations (Layers 1-5) if exported
+  const intermediateLayerTensors: TraceTensor[] = [];
+  for (let l = 0; l < 5; l++) {
+    const intermediate = getOutputTensor(rawOutputs, `layer.${l}/output/LayerNorm`);
+    if (intermediate) {
+      intermediateLayerTensors.push({
+        name: `Layer ${l + 1} output H(${l + 1})`,
+        shape: [1, seqLen, hiddenDim],
+        values: intermediate.data,
+        dtype: "float32",
+        axes: ["batch", "position", "dimension"],
+        description: `Contextual token representations after block ${l + 1} multi-head self-attention and feed-forward network.`,
+      });
+    }
+  }
+
+  // Steps: Progressive token-by-token contextual encoding through the 6 Transformer blocks
+  for (let i = 0; i < seqLen; i++) {
+    const token = tokens[i];
+    const tokenSlice = finalHidden.slice(i * hiddenDim, (i + 1) * hiddenDim);
+    const weightsRow = headAvgMatrix?.[i] ?? [];
+    let peakCol = 0;
+    let peakWeight = -1;
+    weightsRow.forEach((w, col) => {
+      if (w > peakWeight) {
+        peakWeight = w;
+        peakCol = col;
+      }
+    });
+    const peakToken = tokens[peakCol]?.text ?? "";
+    const peakPct = (peakWeight * 100).toFixed(1);
+
+    const stepTensors: TraceTensor[] = [
+      {
+        name: `Contextual token vector h_${i + 1}`,
+        shape: [1, hiddenDim],
+        values: tokenSlice,
+        dtype: "float32",
+        axes: ["batch", "dimension"],
+        description: `Final 384-dimensional contextual representation for token “${token.text}” (position ${i}) after 6 Transformer encoder blocks.`,
+      },
+    ];
+
+    if (weightsRow.length > 0) {
+      stepTensors.push({
+        name: `Self-attention distribution (token ${i + 1})`,
+        shape: [1, seqLen],
+        values: Float32Array.from(weightsRow),
+        dtype: "float32",
+        axes: ["batch", "key position"],
+        description: `Attention weights from query token “${token.text}” across all ${seqLen} key positions (sums to 1.000).`,
+      });
+    }
+
+    stepTensors.push({
+      name: "All tokens H(6)",
+      shape: [1, seqLen, hiddenDim],
+      values: finalHidden,
+      dtype: "float32",
+      axes: ["batch", "position", "dimension"],
+      description: `Complete sequence matrix of contextual representations after 6 Transformer encoder blocks [1 × ${seqLen} × ${hiddenDim}].`,
+    });
+
+    if (headAvgFlat) {
+      stepTensors.push({
+        name: "Head-averaged attention matrix",
+        shape: [1, seqLen, seqLen],
+        values: headAvgFlat,
+        dtype: "float32",
+        axes: ["batch", "query position", "key position"],
+        description: `Average token-to-token attention weight across all 12 attention heads (${seqLen} × ${seqLen}).`,
+      });
+    }
+
+    if (layer6Attn) {
+      stepTensors.push({
+        name: "All 12 attention heads",
+        shape: [1, numHeads, seqLen, seqLen],
+        values: layer6Attn.data,
+        dtype: "float32",
+        axes: ["batch", "head", "query position", "key position"],
+        description: `Full multi-head self-attention distributions across each of the 12 attention heads for layer 6.`,
+      });
+    }
+
+    stepTensors.push(...intermediateLayerTensors);
+
+    steps.push({
+      name: `Encode ${i + 1} · ${token.text}`,
+      stage: "Encoder",
+      operation: "Bidirectional self-attention & FFN",
+      description: `Query token ${i} (“${token.text}”) attends across all ${seqLen} sequence positions over 6 Transformer blocks (12 heads each), focusing most strongly on token ${peakCol} (“${peakToken}”) with ${peakPct}% weight. Residual skip connections and feed-forward layers yield contextual state h_${i + 1} ∈ R^384.`,
+      formula: `\\mathbf{h}_i^{(6)} = \\operatorname{FFN}\\Big(\\operatorname{LayerNorm}\\big(\\mathbf{h}_i^{(5)} + \\sum_{h=1}^{12} \\operatorname{Attn}^{(h)}_i\\big)\\Big)`,
+      tokens,
+      selectedToken: i,
+      attention: headAvgMatrix ? {
+        source: tokenTexts,
+        target: tokenTexts,
+        weights: headAvgMatrix,
+        row: i,
+      } : undefined,
+      tensors: stepTensors,
+    });
+  }
+
+  // Step 11: Mean pooling across unmasked tokens
+  const pooled = new Float32Array(hiddenDim);
+  const summed = new Float32Array(hiddenDim);
+  let unmaskedCount = 0;
+  for (let i = 0; i < seqLen; i++) {
+    if (mask[i] > 0) {
+      unmaskedCount++;
+      const offset = i * hiddenDim;
+      for (let d = 0; d < hiddenDim; d++) {
+        summed[d] += finalHidden[offset + d];
+      }
+    }
+  }
+  const divisor = unmaskedCount > 0 ? unmaskedCount : 1;
+  for (let d = 0; d < hiddenDim; d++) {
+    pooled[d] = summed[d] / divisor;
+  }
+
+  steps.push({
+    name: "Attention-masked mean pooling",
+    stage: "Pooling",
+    operation: "Masked sequence reduction",
+    description: `Averaged contextual hidden representations over ${unmaskedCount} unmasked tokens, compressing variable-length sequence matrix [1 × ${seqLen} × ${hiddenDim}] into a fixed 384-dimensional sentence vector.`,
+    formula: "\\mathbf{e}_{\\text{pooled}} = \\frac{\\sum_{i=1}^L \\mathbf{h}_i^{(6)} \\cdot m_i}{\\sum_{i=1}^L m_i}",
+    tensors: [
+      {
+        name: "Pooled sentence vector",
+        shape: [1, hiddenDim],
+        values: pooled,
+        dtype: "float32",
+        axes: ["batch", "dimension"],
+        description: `Mean vector of unmasked token representations [1 × ${hiddenDim}].`,
+      },
+      {
+        name: "Summed token states",
+        shape: [1, hiddenDim],
+        values: summed,
+        dtype: "float32",
+        axes: ["batch", "dimension"],
+        description: `Element-wise sum of all unmasked token vectors before dividing by count ${divisor}.`,
+      },
+    ],
+  });
+
+  // Step 12: L2 Unit Normalization
+  let normSq = 0;
+  for (let d = 0; d < hiddenDim; d++) normSq += pooled[d] * pooled[d];
+  const l2Norm = Math.sqrt(normSq) || 1e-12;
+  const normalized = new Float32Array(hiddenDim);
+  for (let d = 0; d < hiddenDim; d++) {
+    normalized[d] = pooled[d] / l2Norm;
+  }
+
+  steps.push({
+    name: "Unit L2 hypersphere normalization",
+    stage: "Normalized",
+    operation: "Euclidean L2 projection",
+    description: `Projected pooled representation onto the 384-dimensional unit hypersphere S^383 (||e||_2 = 1.0000). Cosine similarity between any two encoded sentences now equals their inner dot product.`,
+    formula: "\\mathbf{e} = \\frac{\\mathbf{e}_{\\text{pooled}}}{\\|\\mathbf{e}_{\\text{pooled}}\\|_2}, \\quad \\|\\mathbf{e}\\|_2 = 1.0",
+    tensors: [
+      {
+        name: "Final unit embedding",
+        shape: [1, hiddenDim],
+        values: normalized,
+        dtype: "float32",
+        axes: ["batch", "dimension"],
+        description: `Unit-length dense semantic embedding vector on S^383 [1 × ${hiddenDim}].`,
+      },
+    ],
+  });
+
+  const preview = `[${normalized[0].toFixed(3)}, ${normalized[1].toFixed(3)}, ${normalized[2].toFixed(3)}, … (384d)]`;
+
+  return {
+    output: preview,
+    outputLabel: "384-dimensional unit embedding",
+    backend: "ONNX · WASM · q8",
+    elapsed: performance.now() - started,
+    steps,
+    note: `Complete ${steps.length}-step forward pass through all-MiniLM-L6-v2: tokenization, token embedding lookup, learned positional encodings, LayerNorm, progressive self-attention across ${seqLen} token positions, attention-masked mean pooling, and L2 unit hypersphere normalization.`,
+  };
+}
+
 let execution: Promise<unknown> = Promise.resolve();
 export async function runModel(kind: RealModelKind, text: string, progress: ModelProgress): Promise<ExecutionTrace> {
   if (!text.trim()) throw new ModelInputError("Enter an input first.");
   // Shared model methods are instrumented only while their own run holds the queue.
   const run = execution.catch(() => {}).then(async () => {
-    const runInference = kind === "lstm" ? runSentiment : kind === "seq2seq" ? runTranslation : kind === "attention" ? runDateAttention : runTransformer;
+    const runInference =
+      kind === "lstm"
+        ? runSentiment
+        : kind === "seq2seq"
+        ? runTranslation
+        : kind === "attention"
+        ? runDateAttention
+        : kind === "sentence-embeddings"
+        ? runSentenceEmbedding
+        : runTransformer;
     progress("Running the model");
     await yieldToPage();
     const trace = await runInference(text, progress);

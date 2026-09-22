@@ -34,7 +34,7 @@ export function methodPage(topic: Topic, options: {
   const parentCategorySlug = isFoundations ? "foundations" : "structured";
   const parentCategoryLabel = isFoundations ? "Foundations" : "Structured NLP";
   const links = isFoundations
-    ? [["bpe", "BPE"], ["edit-distance", "Edit distance"], ["tfidf", "TF-IDF"]]
+    ? [["bpe", "BPE"], ["edit-distance", "Edit distance"], ["tfidf", "TF-IDF"], ["word-embeddings", "Word embeddings"]]
     : [["n-grams", "Bigrams"], ["viterbi", "Viterbi"], ["cky", "CKY"]];
 
   return `<article id="method-workspace" class="ml-workspace dl-workspace">

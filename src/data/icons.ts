@@ -38,6 +38,20 @@ const icons: Record<string, string> = {
     <path d="M9 17.5a6.5 6.5 0 0 1 4.5-3" stroke-dasharray="2 2" />
   `),
 
+  // 01.4 Word Embeddings: Semantic vector parallelogram and linear analogy offset
+  "word-embeddings": svgWrap(`
+    <circle cx="5.5" cy="7.5" r="1.8" />
+    <circle cx="6" cy="17" r="1.8" />
+    <circle cx="18.5" cy="7.5" r="1.8" />
+    <circle cx="19" cy="17" r="1.8" />
+    <path d="M5.5 7.5L6 17" stroke-opacity="0.35" />
+    <path d="M18.5 7.5L19 17" stroke-opacity="0.35" />
+    <path d="M5.5 7.5h13" stroke-dasharray="2 2" stroke-width="2" />
+    <path d="M15.5 5.5l3 2-3 2" stroke-width="2" />
+    <path d="M6 17h13" stroke-dasharray="2 2" stroke-width="2" />
+    <path d="M16 15l3 2-3 2" stroke-width="2" />
+  `),
+
   // 02.1 Bigram Language Models: Markov chain token sequence with conditional transition arcs
   "n-grams": svgWrap(`
     <circle cx="5" cy="13" r="2.5" />
@@ -110,7 +124,19 @@ const icons: Record<string, string> = {
     <path d="M12 6L20 17.5" stroke-opacity="0.3" />
   `),
 
-  // 03.4 Transformers: Stacked multi-head decoder blocks with causal projection & residual skip
+  // 03.4 Sentence Embeddings: Multi-token sequence converging through a pooling lens into a dense vector
+  "sentence-embeddings": svgWrap(`
+    <rect x="3" y="4" width="10" height="3" rx="1" />
+    <rect x="3" y="9" width="10" height="3" rx="1" />
+    <rect x="3" y="14" width="10" height="3" rx="1" />
+    <path d="M13 5.5l4 4.5M13 10.5h4M13 15.5l4-4.5" stroke-opacity="0.4" />
+    <path d="M17 7.5v6.5" stroke-width="2" />
+    <path d="M17 10.5h4" stroke-width="2.2" />
+    <path d="M19 8.5l2 2-2 2" stroke-width="2.2" />
+    <circle cx="17" cy="10.5" r="1.5" fill="currentColor" />
+  `),
+
+  // 03.5 Transformers: Stacked multi-head decoder blocks with causal projection & residual skip
   transformers: svgWrap(`
     <rect x="4" y="3.5" width="16" height="4" rx="1.2" />
     <rect x="4" y="10" width="16" height="4" rx="1.2" />

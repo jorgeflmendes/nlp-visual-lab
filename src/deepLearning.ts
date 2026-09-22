@@ -56,6 +56,20 @@ const copy: Record<DeepLearningTopic["kind"], PageCopy> = {
     model: "Date conversion with attention", source: "TensorFlow.js", sourceUrl: "https://github.com/tensorflow/tfjs-examples/tree/master/date-conversion-attention",
     inspect: "Encoder states, attention weights, weighted context and output character probabilities.", stages: ["Characters", "Encoder", "Attention", "ISO date"],
   },
+  "sentence-embeddings": {
+    label: "Sentence Embeddings", task: "Encode sentences. Trace mean pooling.",
+    description: "Extract 384-dimensional dense semantic vectors with all-MiniLM-L6-v2. Inspect subwords, encoder hidden states, attention-masked mean pooling, and unit L2 normalization.",
+    inputLabel: "Sentence input", inputValue: "Natural language processing enables computers to understand human language.",
+    inputHint: "Enter any English sentence to extract its 384-dimensional embedding and inspect the forward pass.",
+    presets: [
+      ["NLP understanding", "Natural language processing enables computers to understand human language."],
+      ["Dense semantic vectors", "Dense vectors capture semantic similarity between passages in geometric space."],
+      ["Computational linguistics", "Linguistic theory formalizes syntactic structures and compositional semantics."],
+    ],
+    model: "all-MiniLM-L6-v2 · quantized", source: "Hugging Face", sourceUrl: "https://huggingface.co/Xenova/all-MiniLM-L6-v2",
+    inspect: "WordPiece tokens, embedding additions, 6 self-attention blocks, masked mean pooling, and unit L2 vectors.",
+    stages: ["Tokens", "Embeddings", "Encoder", "Pooling", "Normalized"],
+  },
   transformer: {
     label: "Transformer", task: "Write a prompt. Inspect the next token.",
     description: "Explore DistilGPT2’s causal decoder blocks and the vocabulary scores behind its continuation.",
@@ -74,6 +88,7 @@ const routes: [DeepLearningTopic["kind"], string][] = [
   ["lstm", "lstm"],
   ["seq2seq", "seq2seq"],
   ["attention", "attention"],
+  ["sentence-embeddings", "sentence-embeddings"],
   ["transformer", "transformers"],
 ];
 

@@ -151,6 +151,7 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
   let coordinate = 0;
   let sourceIndex = 0;
   let candidateIndex = 0;
+  let attentionRow = 0;
   let temperature = 1.0;
   let playing = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -165,7 +166,7 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
   root.innerHTML = `<section class="dl-execution" aria-label="Recorded forward pass">
     <div class="dl-transport"><button type="button" data-restart aria-label="Restart walkthrough (R)" title="Restart walkthrough (R)">↺</button><button type="button" data-prev aria-label="Previous step ([ or ←)" title="Previous step ([ or ←)">← Previous</button><button type="button" data-play aria-label="Play / Pause (Space)" title="Play / Pause (Space)">Play</button><button type="button" data-next aria-label="Next step (] or →)" title="Next step (] or →)">Next →</button><label class="dl-position"><span></span><input id="execution-step" aria-label="Execution step" type="range" min="0" max="${trace.steps.length - 1}" value="0"></label></div>
     <nav class="dl-stages" aria-label="Execution stages">${stages.map(stage => `<button type="button" data-stage="${escapeHtml(stage)}">${escapeHtml(stage)}</button>`).join("")}</nav>
-    <div class="dl-layout"><nav class="dl-step-list" aria-label="Forward pass steps">${stepGroups.map((group, groupIndex) => `<div class="dl-step-group" data-group="${groupIndex}" data-stage="${escapeHtml(group.stage)}"><button type="button" class="dl-group-header" data-group-toggle="${groupIndex}" aria-expanded="false"><span class="dl-group-chevron" aria-hidden="true">▾</span><span class="dl-group-title">${escapeHtml(group.stage)}</span><span class="dl-group-count">${group.steps.length}</span></button><div class="dl-group-items">${group.steps.map(({ step, index }) => `<button type="button" data-step="${index}"><small>${String(index + 1).padStart(2, "0")}</small><span>${escapeHtml(step.name)}</span></button>`).join("")}</div></div>`).join("")}</nav><section class="dl-detail" aria-label="Current operation"></section></div>
+    <div class="dl-layout"><nav class="dl-step-list" aria-label="Forward pass steps">${stepGroups.map((group, groupIndex) => `<div class="dl-step-group" data-group="${groupIndex}" data-stage="${escapeHtml(group.stage)}"><button type="button" class="dl-group-header" data-group-toggle="${groupIndex}" aria-expanded="true"><span class="dl-group-chevron" aria-hidden="true">▾</span><span class="dl-group-title">${escapeHtml(group.stage)}</span><span class="dl-group-count">${group.steps.length}</span></button><div class="dl-group-items">${group.steps.map(({ step, index }) => `<button type="button" data-step="${index}"><small>${String(index + 1).padStart(2, "0")}</small><span>${escapeHtml(step.name)}</span></button>`).join("")}</div></div>`).join("")}</nav><section class="dl-detail" aria-label="Current operation"></section></div>
     ${trace.note ? `<p class="dl-note">${escapeHtml(trace.note)}</p>` : ""}</section>`;
   const detail = root.querySelector<HTMLElement>(".dl-detail")!;
   const slider = root.querySelector<HTMLInputElement>("#execution-step")!;
@@ -180,7 +181,13 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
   };
   const move = (index: number, focus?: string) => {
     selected = Math.max(0, Math.min(trace.steps.length - 1, index));
-    const matching = stepNow().tensors.findIndex(tensor => tensor.name === tensorName);
+    const currentStep = trace.steps[selected];
+    if (currentStep.attention) {
+      attentionRow = currentStep.attention.row;
+    } else if (currentStep.selectedToken !== undefined) {
+      attentionRow = currentStep.selectedToken;
+    }
+    const matching = currentStep.tensors.findIndex(tensor => tensor.name === tensorName);
     tensorIndex = Math.max(0, matching);
     resetCandidateIndex();
     if (selected === trace.steps.length - 1) stop();
@@ -199,9 +206,9 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
       const isCurrentGroup = index === activeGroupIndex;
       const header = groupEl.querySelector<HTMLButtonElement>(".dl-group-header");
       const items = groupEl.querySelector<HTMLElement>(".dl-group-items");
-      if (header && items) {
-        header.setAttribute("aria-expanded", String(isCurrentGroup));
-        items.hidden = !isCurrentGroup;
+      if (isCurrentGroup && header && items) {
+        header.setAttribute("aria-expanded", "true");
+        items.hidden = false;
       }
       if (isCurrentGroup) {
         groupEl.setAttribute("data-active-group", "true");
@@ -232,11 +239,11 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
           strongEl.textContent = trace.output;
         } else {
           const currentStage = stepNow().stage;
-          if (currentStage === "Input" || currentStage === "Embedding" || currentStage === "Encoder" || currentStage === "Memory") {
+          if (currentStage === "Input" || currentStage === "Embedding" || currentStage === "Embeddings" || currentStage === "Tokens" || currentStage === "Encoder" || currentStage === "Memory" || currentStage === "Pooling") {
             strongEl.textContent = "…";
           } else {
             const step = stepNow();
-            if (step.stage === "Output") {
+            if (step.stage === "Output" || step.stage === "Normalized") {
               strongEl.textContent = trace.output;
             } else if (step.tokens && step.tokens.length > 0) {
               const emittedTokens = step.tokens.filter(t => t.text !== "[start]" && t.text !== "[pad]");
@@ -334,7 +341,8 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
     const map = step.attention;
     if (!map) return "";
     sourceIndex = Math.min(sourceIndex, map.source.length - 1);
-    const activeWeights = map.weights[map.row] ?? [];
+    const currentRow = Math.min(attentionRow < map.weights.length ? attentionRow : map.row, map.weights.length - 1);
+    const activeWeights = map.weights[currentRow] ?? [];
     let maxWeight = -1;
     let peakColumn = 0;
     activeWeights.forEach((w, col) => {
@@ -345,23 +353,35 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
     });
     const peakPct = (maxWeight * 100).toFixed(1);
     const attendedSourceToken = map.source[peakColumn] ?? "";
-    const generatedChar = map.target[map.row] ?? "";
+    const currentQueryToken = map.target[currentRow] ?? "";
+    const isSelfAttention = step.stage === "Encoder" || (map.target.length === map.source.length && map.target.every((t, i) => t === map.source[i]));
+
+    const headingText = isSelfAttention
+      ? `Self-attention alignment <small>Query token ${currentRow + 1}: “${escapeHtml(visibleToken(currentQueryToken))}”</small>`
+      : `Attention alignment <small>Step ${currentRow + 1}: output “${escapeHtml(visibleToken(currentQueryToken))}”</small>`;
+
+    const calloutText = isSelfAttention
+      ? `Query token <strong>${currentRow} (“${escapeHtml(visibleToken(currentQueryToken))}”)</strong> attends most strongly to token <strong>${peakColumn} (“${escapeHtml(visibleToken(attendedSourceToken))}”)</strong> with <strong>${peakPct}%</strong> attention weight.`
+      : `Top attended input position is <strong>${peakColumn} (“${escapeHtml(visibleToken(attendedSourceToken))}”)</strong> with <strong>${peakPct}%</strong> attention weight.`;
+
+    const stripLabel = isSelfAttention ? "Key focus:" : "Input focus:";
+    const tableHeader = isSelfAttention ? "Query \\ Key" : "Output";
 
     return `<section class="dl-attention">
       <header class="dl-attention-header">
         <div>
-          <h3>Attention alignment <small>Step ${map.row + 1}: output “${escapeHtml(visibleToken(generatedChar))}”</small></h3>
-          <p class="dl-attention-callout">Top attended input position is <strong>${peakColumn} (“${escapeHtml(visibleToken(attendedSourceToken))}”)</strong> with <strong>${peakPct}%</strong> attention weight.</p>
+          <h3>${headingText}</h3>
+          <p class="dl-attention-callout">${calloutText}</p>
         </div>
       </header>
-      <div class="dl-attention-source-strip" aria-label="Input tokens weighted by attention">
-        <span class="dl-strip-label">Input focus:</span>
+      <div class="dl-attention-source-strip" aria-label="Tokens weighted by attention">
+        <span class="dl-strip-label">${stripLabel}</span>
         <div class="dl-source-chips">
           ${map.source.map((token, col) => {
             const w = activeWeights[col] ?? 0;
             const isPeak = col === peakColumn;
             const isSelected = col === sourceIndex;
-            return `<button type="button" class="dl-source-chip ${isPeak ? "is-peak" : ""} ${isSelected ? "is-selected" : ""}" data-source="${col}" aria-pressed="${isSelected}" title="Source ${col} (${escapeHtml(visibleToken(token))}): ${(w * 100).toFixed(1)}% weight"><small>${col}</small><strong>${escapeHtml(visibleToken(token))}</strong><span class="dl-chip-weight">${(w * 100).toFixed(0)}%</span></button>`;
+            return `<button type="button" class="dl-source-chip ${isPeak ? "is-peak" : ""} ${isSelected ? "is-selected" : ""}" data-source="${col}" aria-pressed="${isSelected}" title="Position ${col} (${escapeHtml(visibleToken(token))}): ${(w * 100).toFixed(1)}% weight"><small>${col}</small><strong>${escapeHtml(visibleToken(token))}</strong><span class="dl-chip-weight">${(w * 100).toFixed(0)}%</span></button>`;
           }).join("")}
         </div>
       </div>
@@ -369,16 +389,16 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
         <table>
           <thead>
             <tr>
-              <th scope="col">Output</th>
+              <th scope="col">${tableHeader}</th>
               ${map.source.map((token, column) => `<th scope="col" class="${column === peakColumn ? "is-peak-col" : ""}"><button type="button" data-source="${column}" aria-pressed="${column === sourceIndex}"><small>${column}</small>${escapeHtml(visibleToken(token))}</button></th>`).join("")}
             </tr>
           </thead>
           <tbody>
-            ${map.weights.map((row, rowIndex) => `<tr class="${rowIndex === map.row ? "is-active" : ""}">
-              <th scope="row"><button type="button" data-row="${rowIndex}" aria-pressed="${rowIndex === map.row}"><small>${rowIndex}</small>${escapeHtml(visibleToken(map.target[rowIndex] ?? ""))}</button></th>
+            ${map.weights.map((row, rowIndex) => `<tr class="${rowIndex === currentRow ? "is-active" : ""}">
+              <th scope="row"><button type="button" data-row="${rowIndex}" aria-pressed="${rowIndex === currentRow}"><small>${rowIndex}</small>${escapeHtml(visibleToken(map.target[rowIndex] ?? ""))}</button></th>
               ${row.map((weight, column) => {
-                const isCurrentPeak = rowIndex === map.row && column === peakColumn;
-                return `<td class="${column === sourceIndex ? "is-source" : ""} ${isCurrentPeak ? "is-peak-cell" : ""}"><button type="button" data-cell="${rowIndex},${column}" tabindex="${rowIndex === map.row && column === sourceIndex ? 0 : -1}" aria-pressed="${rowIndex === map.row && column === sourceIndex}" aria-label="Output ${rowIndex} ${escapeHtml(visibleToken(map.target[rowIndex] ?? ""))}, source ${column} ${escapeHtml(visibleToken(map.source[column]))}, weight ${weight}" style="background:${cellColor(weight, 1)};color:${weight > .55 ? "white" : "var(--ink)"}">${weight.toFixed(2)}</button></td>`;
+                const isCurrentPeak = rowIndex === currentRow && column === peakColumn;
+                return `<td class="${column === sourceIndex ? "is-source" : ""} ${isCurrentPeak ? "is-peak-cell" : ""}"><button type="button" data-cell="${rowIndex},${column}" tabindex="${rowIndex === currentRow && column === sourceIndex ? 0 : -1}" aria-pressed="${rowIndex === currentRow && column === sourceIndex}" aria-label="Query ${rowIndex} ${escapeHtml(visibleToken(map.target[rowIndex] ?? ""))}, key ${column} ${escapeHtml(visibleToken(map.source[column]))}, weight ${weight.toFixed(4)}" style="background:${cellColor(weight, 1)};color:${weight > .55 ? "white" : "var(--ink)"}">${weight.toFixed(2)}</button></td>`;
               }).join("")}
             </tr>`).join("")}
           </tbody>
@@ -392,8 +412,12 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
     const map = stepNow().attention;
     const container = detail.querySelector<HTMLElement>(".dl-attention-detail");
     if (!map || !container) return;
-    const selectedRow = row ?? map.row;
-    container.innerHTML = `<strong>${escapeHtml(visibleToken(map.source[column]))} → ${escapeHtml(visibleToken(map.target[selectedRow] ?? ""))}</strong><span>α[${selectedRow}, ${column}] = <code>${map.weights[selectedRow][column]}</code></span><span>Row sum = <code>${map.weights[selectedRow].reduce((sum, value) => sum + value, 0)}</code></span>`;
+    const selectedRow = Math.min(row ?? attentionRow ?? map.row, map.weights.length - 1);
+    const selectedCol = Math.min(column, (map.weights[selectedRow]?.length ?? 1) - 1);
+    const rowWeights = map.weights[selectedRow] ?? [];
+    const rowSum = rowWeights.reduce((sum, value) => sum + value, 0);
+    const weightVal = rowWeights[selectedCol] ?? 0;
+    container.innerHTML = `<strong>Query “${escapeHtml(visibleToken(map.target[selectedRow] ?? ""))}” (pos ${selectedRow}) → Key “${escapeHtml(visibleToken(map.source[selectedCol] ?? ""))}” (pos ${selectedCol})</strong><span>α[${selectedRow}, ${selectedCol}] = <code>${weightVal.toFixed(4)}</code></span><span>Row sum = <code>${rowSum.toFixed(3)}</code></span>`;
   };
   const drawRecurrence = () => {
     const step = stepNow();
@@ -587,8 +611,14 @@ function bindTrace(root: HTMLElement, trace: ExecutionTrace, typesetMath: Typese
     } else if (button.dataset.row !== undefined || button.dataset.cell) {
       const [row, column] = button.dataset.cell ? button.dataset.cell.split(",").map(Number) : [Number(button.dataset.row), sourceIndex];
       sourceIndex = column;
-      const target = trace.steps.findIndex(step => step.stage === "Decoder" && step.attention?.row === row);
-      if (target >= 0) move(target, button.dataset.cell ? `[data-cell="${row},${column}"]` : `[data-row="${row}"]`);
+      attentionRow = row;
+      const target = trace.steps.findIndex(step => (step.stage === "Decoder" || step.stage === "Encoder") && step.attention?.row === row);
+      if (target >= 0) {
+        move(target, button.dataset.cell ? `[data-cell="${row},${column}"]` : `[data-row="${row}"]`);
+      } else {
+        drawStep();
+        restoreFocus(button.dataset.cell ? `[data-cell="${row},${column}"]` : `[data-row="${row}"]`);
+      }
     } else if (button.dataset.source !== undefined) {
       sourceIndex = Number(button.dataset.source);
       drawStep(); restoreFocus(`[data-source="${sourceIndex}"]`);

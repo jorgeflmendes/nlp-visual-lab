@@ -24,12 +24,14 @@ const routes: [string, string][] = [
   ["bpe", "bpe"],
   ["edit-distance", "edit-distance"],
   ["tfidf", "tfidf"],
+  ["word-embeddings", "word-embeddings"],
 ];
 
 const labels: Record<string, string> = {
   bpe: "BPE",
   "edit-distance": "Edit distance",
   tfidf: "TF-IDF",
+  "word-embeddings": "Word embeddings",
 };
 
 export function bpePage(topic: DeepLearningTopic): string {
