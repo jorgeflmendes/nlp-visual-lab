@@ -75,8 +75,13 @@ async function getAssets(kind: RealModelKind, progress: ModelProgress): Promise<
       if (kind === "sentence-embeddings") {
         progress("Loading the ONNX inference runtime");
         const transformers = await import(/* @vite-ignore */ TRANSFORMERS_URL);
+        const base = import.meta.env.BASE_URL ?? "./";
+        const modelsPath = typeof window !== "undefined"
+          ? new URL(`${base.endsWith("/") ? base : base + "/"}models/`, window.location.href).pathname
+          : "/models/";
         transformers.env.allowLocalModels = true;
-        transformers.env.localModelPath = "/models/";
+        transformers.env.allowRemoteModels = false;
+        transformers.env.localModelPath = modelsPath;
         progress("Loading all-MiniLM-L6-v2 weights");
         return transformers.pipeline("feature-extraction", "minilm", {
           device: "wasm",
