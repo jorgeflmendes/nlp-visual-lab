@@ -43,6 +43,7 @@ NLP Visual Lab turns the intermediate calculations behind common natural languag
 | Byte Pair Encoding | Pair leaderboard, merge decisions, evolving vocabulary and subword tokenization trace |
 | Minimum edit distance | Dynamic-programming matrix, operation costs and optimal edit sequence (WebAssembly core) |
 | TF-IDF Vector Space | Term frequencies, inverse document frequencies, vector weights and cosine similarity ranking |
+| Word Embeddings | 100-dimensional GloVe representations (20k vocabulary), arbitrary vector arithmetic ($\vec{v}_{\text{king}} - \vec{v}_{\text{man}} + \vec{v}_{\text{woman}}$), $K$-NN cosine search, cross-similarity heatmaps, and 2D PCA projection |
 
 ### Structured & Classical NLP
 
@@ -59,6 +60,7 @@ NLP Visual Lab turns the intermediate calculations behind common natural languag
 | LSTM | Sentiment classification with token-level input inspection and gated recurrent memory |
 | Sequence-to-sequence | Character-level English-to-French translation with encoder and decoder states |
 | Attention | Date normalization with an attention matrix and dynamic context vectors |
+| Sentence Embeddings | Real in-browser all-MiniLM-L6-v2 ONNX q8 inference via WebAssembly: 384-dimensional dense vectors, multi-sentence cosine similarity heatmaps, semantic search retrieval ranking, 2D PCA projection, and step-by-step unrolled encoder forward pass |
 | DistilGPT2 | Autoregressive text continuation with vocabulary logits and generation controls |
 
 ## Technology
@@ -66,7 +68,9 @@ NLP Visual Lab turns the intermediate calculations behind common natural languag
 - TypeScript and Vite for the application
 - KaTeX for mathematical notation
 - Rust and WebAssembly for the edit-distance core
-- TensorFlow.js and Transformers.js for neural model inference
+- ONNX Runtime Web & Transformers.js for in-browser sentence embeddings and causal language modeling
+- TensorFlow.js for sentiment classification, sequence-to-sequence translation, and additive attention
+- 2D PCA spatial projection via power iteration with Gram-Schmidt orthogonalization
 - Node.js test runner for algorithm and trace regression tests
 - GitHub Actions and GitHub Pages for deployment
 
@@ -105,20 +109,28 @@ src/data/               Topic definitions and examples
 tests/                  Algorithm and trace regression tests
 wasm-core/              Rust source for the WebAssembly core
 scripts/build-wasm.mjs  WebAssembly build step
-public/                 Static assets
+public/models/          Static models (GloVe 100d vectors and all-MiniLM-L6-v2 ONNX)
+public/                 Static assets and WebAssembly binaries
 .github/workflows/      Test, build and GitHub Pages deployment
 ```
 
 ## Model sources
 
-The repository does not contain model weights. The neural experiments load these published models at runtime:
+The application runs 100% client-side in the browser with no backend servers:
+
+### Local assets (bundled in `public/models/`)
+- **GloVe 100d**: 20,000-word vocabulary stored as a compact binary float32 tensor (`glove-20k-100d.bin`) and JSON vocabulary index for instant vector arithmetic.
+- **all-MiniLM-L6-v2**: 8-bit quantized ONNX model (`model_quantized.onnx`) and tokenizer assets (`tokenizer.json`, `vocab.txt`) served directly from the repository for serverless browser inference via WebAssembly.
+
+### Remote runtime models
+The remaining neural experiments download published model weights on first use and cache them locally in the browser:
 
 - [TensorFlow.js sentiment model](https://github.com/tensorflow/tfjs-examples/tree/master/sentiment)
 - [TensorFlow.js translation model](https://github.com/tensorflow/tfjs-examples/tree/master/translation)
 - [TensorFlow.js date conversion with attention](https://github.com/tensorflow/tfjs-examples/tree/master/date-conversion-attention)
 - [Xenova/distilgpt2](https://huggingface.co/Xenova/distilgpt2)
 
-An internet connection is required the first time a neural model is loaded. The classical solvers work without external model downloads.
+The classical solvers, vector spaces, and local embedding models work completely offline without external downloads.
 
 ## Deployment
 
